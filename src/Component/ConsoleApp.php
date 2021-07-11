@@ -16,10 +16,12 @@ use Exception;
 
 class ConsoleApp extends RouteCommand implements ComponentInterface
 {
+    const CONFIG = 'console';
+
     public function register(RegistryInterface $registry)
     {
         $config = $registry->get(Config::class);
-        $commands = require $config->console;
+        $commands = require $config->{self::CONFIG};
 
         foreach ($commands as $command => $class) {
             $this->define($command, $class);

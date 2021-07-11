@@ -14,6 +14,7 @@ use Psr\Log\LoggerInterface;
 
 class DatabaseProvider implements ProviderInterface
 {
+    const CONFIG = 'pdo';
     const DATABASE_DEFAULT = 'default';
 
     public function provide(string $class, ContainerInterface $container)
@@ -23,7 +24,7 @@ class DatabaseProvider implements ProviderInterface
 
         $database = new Database();
 
-        $database->define($config->pdo);
+        $database->define($config->{self::CONFIG});
         $database->setLogger($logger);
 
         $database->debug = $config->debug;

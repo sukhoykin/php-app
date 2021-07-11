@@ -1,18 +1,60 @@
 # PHP Application Toolkit
+> Incubation
 
-## Incubation
+## Usage
+* entry:
+```php
+
+$config = [
+    ConfigProvider::DEFAULT => '/path/to/config.php',
+    ConfigProvider::LOCAL => '/path/to/config.local.php'
+];
+
+$app = new Application($config);
+
+$app->services('/path/to/services.php');
+$app->components('/path/to/components.php');
+
+$app->lookup(SlimApp::class)->run();
+```
+
+* services:
+```php
+return [
+
+    Config::class => ConfigProvider::class,
+    LoggerInterface::class => MonologProvider::class,
+    Database::class => DatabaseProvider::class,
+    HttpClient::class => HttpProvider::class,
+    ...
+
+];
+```
+
+* components:
+```php
+return [
+
+    SlimApp::class,
+    SlimMiddleware::class,
+    SlimRoute::class
+
+];
+```
+
 * config:
 ```php
 return [
     
     'debug' => {boolean},
 
-    'pdo' => 'pgsql:host={};dbname={};user={};password={}',
+    Database::CONFIG => 'pgsql:host={};dbname={};user={};password={}',
 
-    'console' => {path to config},
-    'middleware' => {path to config},
-    'routes' => {path to config}
+    ConsoleApp::CONFIG => {path to config},
+    SlimMiddleware::CONFIG => {path to config},
+    SlimRoute::CONFIG => {path to config}
 ```
+
 * console:
 ```php
 return [
@@ -22,7 +64,8 @@ return [
 
 ];
 ```
-* middleware:
+
+* slim/middleware:
 ```php
 return [
 
@@ -41,7 +84,8 @@ return [
 
 ];
 ```
-* routes:
+
+* slim/routes:
 ```php
 return function (App $app) {
 
@@ -49,3 +93,4 @@ return function (App $app) {
     ...
 
 ```
+

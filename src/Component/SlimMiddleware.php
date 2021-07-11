@@ -10,13 +10,15 @@ use App\Interfaces\RegistryInterface;
 
 class SlimMiddleware extends Component implements ComponentInterface
 {
+    const CONFIG = 'middleware';
+
     public function register(RegistryInterface $registry)
     {
         $slim = $registry->lookup(SlimApp::class);
         $app = $slim->getApp();
 
         $config = $registry->get(Config::class);
-        $config = include $config->middleware;
+        $config = include $config->{self::CONFIG};
 
         if (isset($config['middleware'])) {
 
