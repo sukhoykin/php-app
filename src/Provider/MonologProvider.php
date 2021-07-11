@@ -14,11 +14,13 @@ use Monolog\Logger;
 
 class MonologProvider implements ProviderInterface
 {
+    const CONFIG = 'monolog';
+
     public function provide(string $class, ContainerInterface $container)
     {
         $config = $container->get(Config::class);
 
-        $monolog = $config->monolog;
+        $monolog = $config->{self::CONFIG};
 
         $formatter = new LineFormatter($monolog->format, $monolog->datetime);
         $formatter->includeStacktraces();

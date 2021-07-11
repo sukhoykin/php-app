@@ -6,8 +6,8 @@
 ```php
 
 $config = [
-    ConfigProvider::DEFAULT => '/path/to/config.php',
-    ConfigProvider::LOCAL => '/path/to/config.local.php'
+    ConfigProvider::DEFAULT => '/path/to/main.php',
+    ConfigProvider::LOCAL => '/path/to/main.local.php'
 ];
 
 $app = new Application($config);
@@ -42,13 +42,21 @@ return [
 ];
 ```
 
-* config:
+* main:
 ```php
 return [
     
     'debug' => {boolean},
 
-    Database::CONFIG => 'pgsql:host={};dbname={};user={};password={}',
+    DatabaseProvider::CONFIG => 'pgsql:host={};dbname={};user={};password={}',
+
+    MonologProvider::CONFIG => [
+        'name' => '{}',
+        'stream' => '{}',
+        'datetime' => 'Y-m-d H:i:s.u',
+        'format' => "%datetime% %context.transaction%:%context.address% [%level_name%] %message%\n",
+        'level' => Logger::DEBUG
+    ],
 
     ConsoleApp::CONFIG => {path to config},
     SlimMiddleware::CONFIG => {path to config},
