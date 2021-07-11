@@ -6,11 +6,14 @@ use App\Controller;
 use App\Database\Database;
 use App\Interfaces\CommandInterface;
 use App\Error\UsageError;
+use App\Util\Config;
 use Exception;
 
 class SchemaCommand extends Controller implements CommandInterface
 {
-    const SCHEMA_PATH = __DIR__ . '/../../schema';
+    const CONFIG = 'schema';
+
+    private $path;
 
     const USAGE = "schema <command> [args]
   list                    list schemas and versions
@@ -29,6 +32,9 @@ class SchemaCommand extends Controller implements CommandInterface
         if ($args->has('help') || $args->count() < 1) {
             throw new UsageError(self::USAGE);
         }
+
+        $config = $this->get(Config::class);
+        $this->path = $config->{self::CONFIG};
 
         $command = $args->shift();
 
@@ -53,7 +59,7 @@ class SchemaCommand extends Controller implements CommandInterface
 
     private function schemaConfig()
     {
-        $path = SchemaCommand::SCHEMA_PATH . '/schema.php';
+        $path = $this->path . '/schema.php';
 
         if (!file_exists($path)) {
             throw new Exception('Schema config not found: ' . $path);
@@ -88,7 +94,7 @@ class SchemaCommand extends Controller implements CommandInterface
 
             echo ' version: ', $i, "\n";
 
-            $path = SchemaCommand::SCHEMA_PATH . '/' . $schema . '.' . $i . '.sql';
+            $path = $this->path . '/' . $schema . '.' . $i . '.sql';
             $command = @file_get_contents($path);
 
             if ($command === false) {
@@ -167,7 +173,7 @@ class SchemaCommand extends Controller implements CommandInterface
             }
         }
 
-        $path = SchemaCommand::SCHEMA_PATH . '/' . $name . '.drop.sql';
+        $path = $this->path . '/' . $name . '.drop.sql';
         $command = @file_get_contents($path);
 
         if ($command === false) {

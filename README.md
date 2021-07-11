@@ -102,3 +102,31 @@ return function (App $app) {
 
 ```
 
+## SchemaCommand
+
+* main:
+```php
+
+SchemaCommand::CONFIG => {path to schema directory}
+
+```
+
+* schema directory:
+```
+config.php
+public.1.sql
+public.2.sql
+...
+```
+
+* config (current schema version):
+```php
+<?php
+
+declare(strict_types=1);
+
+return [
+    'public' => 2
+];
+
+```
