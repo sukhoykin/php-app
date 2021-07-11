@@ -9,6 +9,7 @@ use App\Interfaces\RegistryInterface;
 
 use App\Console\Arguments;
 use App\Console\RouteCommand;
+use App\Util\Config;
 
 use App\Error\NoRouteError;
 use App\Error\UsageError;

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Component;
 
 use App\Component;
+use App\Util\Config;
+
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
 
