@@ -33,7 +33,7 @@ class SchemaCommand extends Controller implements CommandInterface
             throw new UsageError(self::USAGE);
         }
 
-        $config = $this->get(Config::class);
+        $config = $this->container()->get(Config::class);
         $this->path = $config->{self::CONFIG};
 
         $command = $args->shift();
@@ -101,7 +101,7 @@ class SchemaCommand extends Controller implements CommandInterface
                 throw new \Exception('Could not read schema: ' . $path);
             }
 
-            $database = $this->get(Database::class);
+            $database = $this->container()->get(Database::class);
             $connection = $database->connection();
 
             $connection->beginTransaction();
@@ -125,7 +125,7 @@ class SchemaCommand extends Controller implements CommandInterface
         $table = $this->schemaTable($schema);
         $version = 0;
 
-        $database = $this->get(Database::class);
+        $database = $this->container()->get(Database::class);
         $connection = $database->connection();
 
         $connection->prepare('CREATE TABLE IF NOT EXISTS ' . $table . ' (version int NOT NULL)');
@@ -149,7 +149,7 @@ class SchemaCommand extends Controller implements CommandInterface
     {
         $table = $this->schemaTable($schema);
 
-        $database = $this->get(Database::class);
+        $database = $this->container()->get(Database::class);
         $connection = $database->connection();
 
         $connection->prepare('UPDATE ' . $table . ' SET version = ?');
@@ -180,7 +180,7 @@ class SchemaCommand extends Controller implements CommandInterface
             throw new Exception('Could not read schema: ' . $path);
         }
 
-        $database = $this->get(Database::class);
+        $database = $this->container()->get(Database::class);
         $connection = $database->connection();
 
         $connection->beginTransaction();

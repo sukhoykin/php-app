@@ -6,6 +6,7 @@ namespace App\Component;
 
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
 
 use App\Console\Arguments;
 use App\Console\RouteCommand;
@@ -19,9 +20,9 @@ class ConsoleApp extends RouteCommand implements ComponentInterface
 {
     const CONFIG = 'console';
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
-        $config = $registry->get(Config::class);
+        $config = $container->get(Config::class);
         $commands = require $config->{self::CONFIG};
 
         foreach ($commands as $command => $class) {

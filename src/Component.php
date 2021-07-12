@@ -7,13 +7,18 @@ namespace App;
 use Psr\Container\ContainerInterface;
 use Exception;
 
-class Component implements ContainerInterface
+class Component
 {
     private $container;
 
     public function __construct(ContainerInterface $container)
     {
         $this->container = $container;
+    }
+
+    public function container(): ContainerInterface
+    {
+        return $this->container;
     }
 
     public function instantiate($class)
@@ -27,15 +32,5 @@ class Component implements ContainerInterface
         } catch (Exception $e) {
             throw new Exception('Class ' . $class . ' must be ' . Component::class . ' instance', 0, $e);
         }
-    }
-
-    public function has($class)
-    {
-        return $this->container->has($class);
-    }
-
-    public function get($class)
-    {
-        return $this->container->get($class);
     }
 }

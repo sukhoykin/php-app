@@ -113,7 +113,7 @@ SchemaCommand::CONFIG => {path to schema directory}
 
 * schema directory:
 ```
-config.php
+schema.php
 public.1.sql
 public.2.sql
 ...

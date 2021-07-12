@@ -7,6 +7,7 @@ namespace App\Component;
 use App\Component;
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
 
 use Slim\App;
 use Slim\Factory\AppFactory;
@@ -18,9 +19,9 @@ class SlimApp extends Component implements ComponentInterface
     private $app;
     private $request;
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
-        AppFactory::setContainer($registry);
+        AppFactory::setContainer($container);
         $this->app = AppFactory::create();
 
         $serverRequestCreator = ServerRequestCreatorFactory::create();

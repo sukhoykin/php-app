@@ -9,17 +9,18 @@ use App\Util\Config;
 
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
 
 class SlimMiddleware extends Component implements ComponentInterface
 {
     const CONFIG = 'middleware';
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
         $slim = $registry->lookup(SlimApp::class);
         $app = $slim->getApp();
 
-        $config = $registry->get(Config::class);
+        $config = $container->get(Config::class);
         $config = include $config->{self::CONFIG};
 
         if (isset($config['middleware'])) {
@@ -29,7 +30,7 @@ class SlimMiddleware extends Component implements ComponentInterface
                 $middleware = new $class();
 
                 if ($middleware instanceof ComponentInterface) {
-                    $middleware->register($registry);
+                    $middleware->register($registry, $container);
                 }
 
                 $app->add($middleware);
@@ -47,7 +48,7 @@ class SlimMiddleware extends Component implements ComponentInterface
                 $handler = new $class();
 
                 if ($handler instanceof ComponentInterface) {
-                    $handler->register($registry);
+                    $handler->register($registry, $container);
                 }
 
                 if ($type == 'default') {

@@ -28,11 +28,6 @@ class Application extends Component implements RegistryInterface
         $this->container->put(self::CONFIG, $config);
     }
 
-    public function getContainer(): Container
-    {
-        return $this->container;
-    }
-
     private function config($path)
     {
         if (!file_exists($path)) {
@@ -65,7 +60,7 @@ class Application extends Component implements RegistryInterface
         $component = $this->instantiate($class);
 
         if ($component instanceof ComponentInterface) {
-            $component->register($this);
+            $component->register($this, $this->container());
         } else {
             throw new Exception('Component' . $class . ' must implement ' . ComponentInterface::class);
         }

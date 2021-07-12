@@ -9,17 +9,18 @@ use App\Util\Config;
 
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
 
 class SlimRoute extends Component implements ComponentInterface
 {
     const CONFIG = 'routes';
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
         $slim = $registry->lookup(SlimApp::class);
         $app = $slim->getApp();
 
-        $config = $registry->get(Config::class);
+        $config = $container->get(Config::class);
         $routes = require $config->{self::CONFIG};
 
         $routes($app);

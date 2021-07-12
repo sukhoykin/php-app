@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Interfaces;
 
-use Psr\Container\ContainerInterface;
-
-interface RegistryInterface extends ContainerInterface
+interface RegistryInterface
 {
     function lookup(string $class);
 }

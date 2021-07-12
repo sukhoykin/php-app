@@ -7,13 +7,15 @@ namespace App\Middleware;
 use App\Component\SlimApp;
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
-use Exception;
+use Psr\Log\LoggerInterface;
+
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Exception\HttpException;
 
-use Psr\Log\LoggerInterface;
 use Slim\Interfaces\ErrorHandlerInterface;
+use Exception;
 use Throwable;
 
 class DefaultErrorHandler implements ComponentInterface, ErrorHandlerInterface
@@ -21,13 +23,13 @@ class DefaultErrorHandler implements ComponentInterface, ErrorHandlerInterface
     private $log;
     private $responseFactory;
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
         $slim = $registry->lookup(SlimApp::class);
         $app = $slim->getApp();
         $request = $slim->getRequest();
 
-        $this->log = $registry->get(LoggerInterface::class);
+        $this->log = $container->get(LoggerInterface::class);
         $this->responseFactory = $app->getResponseFactory();
 
         $shutdown = new ShutdownHandler($request, $this);

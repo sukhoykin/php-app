@@ -6,6 +6,8 @@ namespace App\Middleware;
 
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
@@ -23,9 +25,9 @@ class ContextMiddleware implements ComponentInterface
         return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? ($_SERVER['REMOTE_ADDR'] ?? '');
     }
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
-        $log = $registry->get(LoggerInterface::class);
+        $log = $container->get(LoggerInterface::class);
 
         if ($log instanceof Logger) {
 

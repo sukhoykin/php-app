@@ -7,9 +7,10 @@ namespace App\Middleware;
 use App\Application;
 use App\Interfaces\ComponentInterface;
 use App\Interfaces\RegistryInterface;
+use Psr\Container\ContainerInterface;
+
 use App\Util\Config;
 use App\Util\Profiler;
-
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface as RequestHandler;
@@ -23,12 +24,12 @@ class AccessLogMiddleware implements ComponentInterface
 
     public $debug = false;
 
-    public function register(RegistryInterface $registry)
+    public function register(RegistryInterface $registry, ContainerInterface $container)
     {
-        $config = $registry->get(Config::class);
+        $config = $container->get(Config::class);
 
-        $this->log = $registry->get(LoggerInterface::class);
-        $this->profiler = $registry->get(Profiler::class);
+        $this->log = $container->get(LoggerInterface::class);
+        $this->profiler = $container->get(Profiler::class);
 
         $this->debug = $config->debug;
     }
