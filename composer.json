@@ -1,9 +1,9 @@
 {
-  "name": "sukhoykin/php-apptool",
+  "name": "sukhoykin/php-app",
   "description": "PHP Application Toolkit",
   "authors": [
     {
-      "name": "Vadim Sukhyokin",
+      "name": "Vadim Sukhoykin",
       "email": "vadim.sukhoykin@gmail.com"
     }
   ],
