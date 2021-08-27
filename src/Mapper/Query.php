@@ -13,12 +13,13 @@ use Psr\Log\LoggerInterface;
 class Query
 {
     private $pdo;
+    private $datasource;
 
     private $query = [];
     private $params = [];
 
-    private $currentStatement;
-    private $currentQuery;
+    private $statement;
+    private $sql;
 
     private $profiler;
     private $log;
@@ -26,9 +27,10 @@ class Query
     public $debug = false;
     public $silent = false;
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, ?Datasource $datasource = null)
     {
         $this->pdo = $pdo;
+        $this->datasource = $datasource;
 
         $this->profiler = new Profiler();
         $this->log = new Stdout();
@@ -53,13 +55,6 @@ class Query
                     $this->params[] = $param;
                     break;
             }
-        }
-    }
-
-    private function checkStatement()
-    {
-        if (!$this->currentStatement) {
-            throw new Exception('Illegal state: query is not prepared (call prepare first)');
         }
     }
 
@@ -139,44 +134,53 @@ class Query
         return $this;
     }
 
+    private function checkStatement()
+    {
+        if (!$this->statement) {
+            throw new Exception('Illegal state: query is not prepared (call prepare first)');
+        }
+    }
+
     public function prepare(): Query
     {
-        $query = implode(' ', $this->query);
-
-        $this->profiler->start('pdo.prepare');
-
-        if ($this->debug && !$this->silent) {
-            $this->log->debug($query);
+        if ($this->statement) {
+            return $this;
         }
 
-        $this->currentStatement = $this->pdo->prepare($query);
-        $this->currentQuery = $query;
+        $sql = implode(' ', $this->query);
+
+        $this->profiler->start('prepare');
+
+        if ($this->debug && !$this->silent) {
+            $this->log->debug($sql);
+        }
+
+        $this->statement = $this->pdo->prepare($sql);
+        $this->sql = $sql;
 
         return $this;
     }
 
     public function execute(?array $params = null): Query
     {
-        if (!$this->currentStatement) {
-            $this->prepare();
-        }
+        $this->prepare();
 
-        $this->profiler->start('pdo.execute');
+        $this->profiler->start('execute');
 
         if ($this->debug && !$this->silent && $params) {
             $this->log->debug(json_encode($params, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
         }
 
-        $this->currentStatement->execute($params ?? $this->params);
+        $this->statement->execute($params ?? $this->params);
 
         if ($this->debug && !$this->silent) {
 
             $this->log->debug(
                 sprintf(
                     '%s %02.3fs %02.3fs',
-                    $this->currentQuery,
-                    $this->profiler->took('pdo.execute'),
-                    $this->profiler->took('pdo.prepare')
+                    $this->sql,
+                    $this->profiler->took('execute'),
+                    $this->profiler->took('prepare')
                 )
             );
         }
@@ -187,23 +191,28 @@ class Query
     public function rowCount()
     {
         $this->checkStatement();
-        return $this->currentStatement->rowCount();
+        return $this->statement->rowCount();
     }
 
     public function fetch(?string $class = null)
     {
         $this->checkStatement();
 
-        $result = false;
+        $result = null;
 
         if ($class) {
+
             if ($class == stdClass::class) {
-                $result = $this->currentStatement->fetch(PDO::FETCH_OBJ);
+                $result = $this->statement->fetch(PDO::FETCH_OBJ);
             } else {
-                $result = $this->currentStatement->fetchObject($class);
+                $result = $this->statement->fetchObject($class);
+            }
+
+            if ($result instanceof Entity) {
+                $result->setDatasource($this->datasource);
             }
         } else {
-            $result = $this->currentStatement->fetch();
+            $result = $this->statement->fetch();
         }
 
         return $result ? $result : null;
@@ -215,25 +224,25 @@ class Query
 
         if ($class) {
             if ($class == stdClass::class) {
-                return $this->currentStatement->fetchAll(PDO::FETCH_OBJ, $class);
+                return $this->statement->fetchAll(PDO::FETCH_OBJ, $class);
             }
-            return $this->currentStatement->fetchAll(PDO::FETCH_CLASS, $class);
+            return $this->statement->fetchAll(PDO::FETCH_CLASS, $class);
         } else {
-            return $this->currentStatement->fetchAll();
+            return $this->statement->fetchAll();
         }
     }
 
     public function fetchAssoc()
     {
         $this->checkStatement();
-        $result = $this->currentStatement->fetch(PDO::FETCH_ASSOC);
+        $result = $this->statement->fetch(PDO::FETCH_ASSOC);
         return $result ? $result : null;
     }
 
     public function fetchAllAssoc()
     {
         $this->checkStatement();
-        return $this->currentStatement->fetchAll(PDO::FETCH_ASSOC);
+        return $this->statement->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function fetchAllColumn(string $column)
@@ -242,7 +251,7 @@ class Query
 
         $all = [];
 
-        foreach ($this->currentStatement->fetchAll() as $row) {
+        foreach ($this->statement->fetchAll() as $row) {
             $all[] = $row[$column];
         }
 
@@ -251,9 +260,9 @@ class Query
 
     public function closeCursor()
     {
-        if ($this->currentStatement) {
-            $this->currentStatement->closeCursor();
-            $this->currentStatement = null;
+        if ($this->statement) {
+            $this->statement->closeCursor();
+            $this->statement = null;
         }
     }
 }

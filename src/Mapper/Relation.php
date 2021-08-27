@@ -42,7 +42,7 @@ class Relation
         return self::$REFLECTIONS[$class];
     }
 
-    protected function getClassPropertyNames(?string $class, ?int $filter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED): array
+    protected function getClassPropertyNames(string $class, ?int $filter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED): array
     {
         return array_map(
             function (ReflectionProperty $property) {
@@ -105,5 +105,30 @@ class Relation
         }
 
         return $map;
+    }
+
+    public function extract(?array $attributes = null, ?string $class = null): Relation
+    {
+        $relation = $class ? new $class() : new $this->getClass();
+
+        foreach ($attributes ?? $this->attributes() as $attribute) {
+            $relation->{$attribute} = $this->{$attribute};
+        }
+
+        return $relation;
+    }
+
+    public function reduce(array $attributes, ?string $class = null): Relation
+    {
+        $relation = $class ? new $class() : new $this->getClass();
+
+        foreach ($this->attributes() as $attribute) {
+
+            if (!in_array($attribute, $attributes)) {
+                $relation->{$attribute} = $this->{$attribute};
+            }
+        }
+
+        return $relation;
     }
 }

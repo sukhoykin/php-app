@@ -9,10 +9,12 @@ use PDO;
 class Mapper
 {
     private $pdo;
+    private $datasource;
 
-    public function __construct(PDO $pdo)
+    public function __construct(PDO $pdo, ?Datasource $datasource = null)
     {
         $this->pdo = $pdo;
+        $this->datasource = $datasource;
     }
 
     public function beginTransaction()
@@ -32,7 +34,7 @@ class Mapper
 
     public function query(?string $sql = null, ?array $params = null): Query
     {
-        $query = new Query($this->pdo);
+        $query = new Query($this->pdo, $this->datasource);
 
         if ($sql) {
             $query->append($sql, $params);

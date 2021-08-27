@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Mapper;
 
 use Exception;
-use stdClass;
 
 class Entity extends Relation
 {
@@ -14,7 +13,19 @@ class Entity extends Relation
     private $table;
     private $primaryKey;
 
-    public function setDatasource(Datasource $datasource)
+    protected function __construct(string $class, array $primaryKey)
+    {
+        parent::__construct($class);
+
+        $this->primaryKey = $primaryKey;
+
+        $className = preg_replace('/.*\\\/', '', $this->getClass());
+        preg_match_all('/[A-Z][a-z0-9]+/', $className, $matches);
+
+        $this->table =  strtolower(implode('_', $matches[0]));
+    }
+
+    public function setDatasource(?Datasource $datasource)
     {
         $this->datasource = $datasource;
     }
@@ -30,23 +41,11 @@ class Entity extends Relation
 
     public function getTable(): string
     {
-        if (!$this->table) {
-
-            $name = preg_replace('/.*\\\/', '', $this->getClass());
-            preg_match_all('/[A-Z][a-z0-9]+/', $name, $matches);
-
-            $this->table =  strtolower(implode('_', $matches[0]));
-        }
-
         return $this->table;
     }
 
     public function getPrimaryKey(): array
     {
-        if (!$this->primaryKey) {
-            $this->primaryKey = count($this->getAttributes()) ? [$this->getAttributes()[0]] : [];
-        }
-
         return $this->primaryKey;
     }
 }
