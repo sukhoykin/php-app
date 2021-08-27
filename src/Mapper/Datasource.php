@@ -14,7 +14,6 @@ class Datasource
     const DEFAULT_ID = 0;
 
     private $log;
-    public $debug = false;
 
     private $definitions = [];
     private $connections = [];
@@ -57,7 +56,6 @@ class Datasource
         if (!isset($this->mappers[$name][$id][$class])) {
 
             $mapper = new $class($this->getConnection($name, $id));
-            $mapper->debug = $this->debug;
 
             if ($this->log) {
                 $mapper->setLogger($this->log);

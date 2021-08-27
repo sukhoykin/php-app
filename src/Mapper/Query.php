@@ -14,7 +14,7 @@ class Query
     private $pdo;
     private $datasource;
 
-    private $ifonly;
+    private $enabled = true;
     private $query = [];
     private $params = [];
 
@@ -54,9 +54,9 @@ class Query
         }
     }
 
-    public function ifonly(bool $ifonly)
+    public function ifonly(bool $enabled)
     {
-        $this->ifonly = $ifonly;
+        $this->enabled = $enabled;
         return $this;
     }
 
@@ -69,6 +69,10 @@ class Query
      */
     public function append(string $sql, ?array $params = null): Query
     {
+        if (!$this->enabled) {
+            return $this;
+        }
+
         $this->query[] = $sql;
 
         if ($params) {
@@ -87,16 +91,22 @@ class Query
      */
     public function assign(array $map, string $separator): Query
     {
-        $query = array_map(
-            function ($name) {
-                return $name . ' = ?';
-            },
-            array_keys($map)
-        );
+        if (!$this->enabled) {
+            return $this;
+        }
+
+        $assign = [];
+        $values = [];
+
+        foreach ($map as $attribute => $value) {
+
+            $assign[] = $attribute . ' = ?';
+            $values[] = $value;
+        }
 
         $this->append(
-            implode($separator, $query),
-            array_values($map)
+            implode($separator, $assign),
+            $values
         );
 
         return $this;
@@ -113,6 +123,10 @@ class Query
      */
     public function concat(array $list, string $separator): Query
     {
+        if (!$this->enabled) {
+            return $this;
+        }
+
         $this->query[] = implode($separator, $list);
 
         return $this;
@@ -128,6 +142,10 @@ class Query
      */
     public function values(array $params, string $separator): Query
     {
+        if (!$this->enabled) {
+            return $this;
+        }
+
         $query = array_fill(0, count($params), '?');
 
         $this->query[] = implode($separator, $query);
@@ -146,7 +164,7 @@ class Query
 
         $this->profiler->start('prepare');
 
-        if ($this->debug && !$this->silent) {
+        if ($this->log) {
             $this->log->debug($sql);
         }
 
@@ -160,20 +178,25 @@ class Query
     {
         $this->prepare();
 
-        $this->profiler->start('execute');
-
-        if ($this->debug && !$this->silent && $params) {
-            $this->log->debug(json_encode($params, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+        if ($params) {
+            $this->params = $params;
         }
 
-        $this->statement->execute($params ?? $this->params);
+        $this->profiler->start('execute');
 
-        if ($this->debug && !$this->silent) {
+        if ($this->log && $this->params) {
+            $this->log->debug($this->sql . ' ' . json_encode($this->params, JSON_UNESCAPED_UNICODE));
+        }
 
-            $this->log->debug(
+        $this->statement->execute($this->params);
+
+        if ($this->log) {
+
+            $this->log->info(
                 sprintf(
-                    '%s %02.3fs %02.3fs',
+                    '%s (%d) %02.3fs %02.3fs',
                     $this->sql,
+                    $this->statement->rowCount(),
                     $this->profiler->took('execute'),
                     $this->profiler->took('prepare')
                 )

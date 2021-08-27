@@ -5,16 +5,26 @@ declare(strict_types=1);
 namespace App\Mapper;
 
 use PDO;
+use Psr\Log\LoggerInterface;
+
+use Exception;
 
 class Mapper
 {
     private $pdo;
     private $datasource;
 
+    private $log;
+
     public function __construct(PDO $pdo, ?Datasource $datasource = null)
     {
         $this->pdo = $pdo;
         $this->datasource = $datasource;
+    }
+
+    public function setLogger(LoggerInterface $log)
+    {
+        $this->log = $log;
     }
 
     public function beginTransaction()
@@ -36,6 +46,10 @@ class Mapper
     {
         $query = new Query($this->pdo, $this->datasource);
 
+        if ($this->log) {
+            $query->setLogger($this->log);
+        }
+
         if ($sql) {
             $query->append($sql, $params);
         }
@@ -55,33 +69,39 @@ class Mapper
 
     public function findAll(string $class, ?array $where = null)
     {
-        $query = $this->query('SELECT * FROM')->append($this->getTableOfEntityClass($class));
+        $result = $this->query('SELECT * FROM')
+            ->append($this->getTableOfEntityClass($class))
+            ->ifonly($where != null)
+            ->append('WHERE')
+            ->assign($where, ' AND ')
+            ->execute();
 
-        if ($where) {
-            $query->append('WHERE')->assign($where, 'AND');
-        }
-
-        return $query->execute()->fetchAll($class);
+        return $result->fetchAll($class);
     }
 
     public function find(string $class, array $where)
     {
-        $query = $this->query('SELECT * FROM')
+        $result = $this->query('SELECT * FROM')
             ->append($this->getTableOfEntityClass($class))
+            ->ifonly(count($where) > 0)
             ->append('WHERE')
-            ->assign($where, 'AND');
+            ->assign($where, ' AND ')
+            ->ifonly(count($where) == 0)
+            ->append('LIMIT 1')
+            ->execute();
 
-        $query->execute()->fetch($class);
+        return $result->fetch($class);
     }
 
     public function exists(string $class, array $where): bool
     {
-        $query = $this->query('SELECT 1 FROM')
+        $result = $this->query('SELECT 1 FROM')
             ->append($this->getTableOfEntityClass($class))
             ->append('WHERE')
-            ->assign($where, 'AND');
+            ->assign($where, ' AND ')
+            ->execute();
 
-        return (bool) $query->execute()->fetch();
+        return (bool) $result->fetch();
     }
 
     public function insert(Entity $entity, $skipConflict = false): int
@@ -90,19 +110,22 @@ class Mapper
         $values = $entity->values(Relation::ATTRIBUTE_NOT_NULL);
         $returning = $entity->attributes(Entity::ATTRIBUTE_PRIMARY_KEY | Relation::ATTRIBUTE_NULL);
 
+        if (!count($attributes)) {
+            throw new Exception('Could not insert empty Entity');
+        }
+
         $result = $this->query('INSERT INTO')
             ->append($this->getTableOfEntity($entity))
-            ->ifonly(count($attributes) > 0)
             ->append('(')
-            ->concat($attributes, ',')
+            ->concat($attributes, ' , ')
             ->append(') VALUES (')
-            ->values($values, ',')
+            ->values($values, ' , ')
             ->append(')')
             ->ifonly($skipConflict)
             ->append('ON CONFLICT DO NOTHING')
             ->ifonly(count($returning) > 0)
             ->append('RETURNING')
-            ->concat($returning, ',')
+            ->concat($returning, ' , ')
             ->execute();
 
         $entity->setDatasource($this->datasource, count($returning) ? $result : null);
@@ -110,16 +133,20 @@ class Mapper
         return $result->rowCount();
     }
 
-    public function update(Entity $entity): int
+    public function update(Entity $entity, $skipNulls = true): int
     {
+        $valueMap = $entity->map(($skipNulls ? Relation::ATTRIBUTE_NOT_NULL : 0) | Entity::ATTRIBUTE_REGULAR);
         $keyMap = $entity->map(Entity::ATTRIBUTE_PRIMARY_KEY);
-        $valueMap = $entity->map(Relation::ATTRIBUTE_NOT_NULL | Entity::ATTRIBUTE_REGULAR);
+
+        if (!count($valueMap)) {
+            throw new Exception('Could not update empty Entity');
+        }
 
         $result = $this->query('UPDATE')
             ->append($this->getTableOfEntity($entity))
             ->ifonly(count($valueMap) > 0)
             ->append('SET')
-            ->assign($valueMap, ',')
+            ->assign($valueMap, ' , ')
             ->ifonly(count($keyMap) > 0)
             ->append('WHERE')
             ->assign($keyMap, ' AND ')
