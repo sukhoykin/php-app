@@ -70,9 +70,9 @@ class Query
      * $query->append('SELECT * FROM "table" WHERE id = ? AND status = ?', [1, 'active']);
      * 
      */
-    public function append(string $query, ?array $params = null): Query
+    public function append(string $sql, ?array $params = null): Query
     {
-        $this->query[] = $query;
+        $this->query[] = $sql;
 
         if ($params) {
             $this->appendParams($params);
@@ -85,10 +85,10 @@ class Query
      * Format and append assigments of map elements.
      * 
      * Example:
-     * $query->assign('AND', ['id' => 1, 'status' => 'active']);
+     * $query->assign(['id' => 1, 'status' => 'active'], 'AND');
      *
      */
-    public function assign(string $separator, array $map): Query
+    public function assign(array $map, string $separator): Query
     {
         $query = array_map(
             function ($name) {
@@ -109,12 +109,12 @@ class Query
      * Concatenate and append list elements.
      * 
      * Example:
-     * $query->concat(', ', ['id', 'name']);
+     * $query->concat(['id', 'name'], ', ');
      * 
      * Will result "id, name".
      * 
      */
-    public function concat(string $separator, array $list): Query
+    public function concat(array $list, string $separator): Query
     {
         $this->query[] = implode($separator, $list);
 
@@ -125,11 +125,11 @@ class Query
      * Format and append parameter placeholders.
      * 
      * Example:
-     * $query->values(', ', [1, 'active']);
+     * $query->values([1, 'active'], ', ');
      * 
      * Will result "?, ?".
      */
-    public function values(string $separator, array $params): Query
+    public function values(array $params, string $separator): Query
     {
         $query = array_fill(0, count($params), '?');
 
@@ -139,7 +139,7 @@ class Query
         return $this;
     }
 
-    public function prepare()
+    public function prepare(): Query
     {
         $query = implode(' ', $this->query);
 
@@ -151,9 +151,11 @@ class Query
 
         $this->currentStatement = $this->pdo->prepare($query);
         $this->currentQuery = $query;
+
+        return $this;
     }
 
-    public function execute(?array $params = null)
+    public function execute(?array $params = null): Query
     {
         if (!$this->currentStatement) {
             $this->prepare();
@@ -178,6 +180,8 @@ class Query
                 )
             );
         }
+
+        return $this;
     }
 
     public function rowCount()
@@ -186,7 +190,7 @@ class Query
         return $this->currentStatement->rowCount();
     }
 
-    public function fetch(string $class = null)
+    public function fetch(?string $class = null)
     {
         $this->checkStatement();
 
@@ -205,7 +209,7 @@ class Query
         return $result ? $result : null;
     }
 
-    public function fetchAll(string $class = null)
+    public function fetchAll(?string $class = null)
     {
         $this->checkStatement();
 

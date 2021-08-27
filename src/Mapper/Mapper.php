@@ -4,74 +4,103 @@ declare(strict_types=1);
 
 namespace App\Mapper;
 
-use App\Error\InvalidArgumentError;
+use PDO;
 
 class Mapper
 {
-    public function tableOfClass(string $class)
-    {
-        $name = preg_replace('/.*\\\/', '', $class);
-        preg_match_all('/[A-Z][a-z0-9]+/', $name, $matches);
+    private $pdo;
 
-        return strtolower(implode('_', $matches[0]));
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
     }
 
-    public function tableOfRelation(Relation $entity)
+    public function beginTransaction()
     {
-        return $this->tableOfClass(get_class($entity));
+        $this->pdo->beginTransaction();
     }
 
-    public function query(string $query, array $params = null): Query
+    public function commit()
     {
-        $instance = new Query($this);
-        return $instance->append($query, $params);
+        $this->pdo->commit();
     }
 
-    public function findAll(string $class, array $where = null)
+    public function rollBack()
     {
-        $query = $this->query('SELECT * FROM')->append($this->tableOfClass($class));
+        $this->pdo->rollBack();
+    }
 
-        if ($where) {
-            $query->append('WHERE')->assign('AND', $where);
+    public function query(?string $sql = null, ?array $params = null): Query
+    {
+        $query = new Query($this->pdo);
+
+        if ($sql) {
+            $query->append($sql, $params);
         }
 
-        $query->execute();
+        return $query;
+    }
 
-        return $this->fetchAll($class);
+    protected function getTableOfEntity(Entity $entity): string
+    {
+        return $entity->getTable();
+    }
+
+    protected function getTableOfEntityClass(string $class): string
+    {
+        return $this->getTableOfEntity(new $class());
+    }
+
+    public function findAll(string $class, ?array $where = null)
+    {
+        $query = $this->query('SELECT * FROM')->append($this->getTableOfEntityClass($class));
+
+        if ($where) {
+            $query->append('WHERE')->assign($where, 'AND');
+        }
+
+        return $query->execute()->fetchAll($class);
     }
 
     public function find(string $class, array $where)
     {
-        $this->query('SELECT * FROM')
-            ->append($this->tableOfClass($class))
+        $query = $this->query('SELECT * FROM')
+            ->append($this->getTableOfEntityClass($class))
             ->append('WHERE')
-            ->assign(' AND ', $where)
-            ->execute();
+            ->assign($where, 'AND');
 
-        return $this->fetch($class);
+        $query->execute()->fetch($class);
     }
 
     public function exists(string $class, array $where): bool
     {
-        $this->query('SELECT 1 FROM')
-            ->append($this->tableOfClass($class))
+        $query = $this->query('SELECT 1 FROM')
+            ->append($this->getTableOfEntityClass($class))
             ->append('WHERE')
-            ->assign(' AND ', $where)
-            ->execute();
+            ->assign($where, 'AND');
 
-        return (bool) $this->fetch();
+        return (bool) $query->execute()->fetch();
     }
 
-    public function insert(Relation $relation, $skipConflict = false): int
+    private function notNull(&$map)
+    {
+        foreach ($map as $key => $value) {
+            if (is_null($value)) {
+                unset($attributes[$key]);
+            }
+        }
+    }
+
+    public function insert(Entity $entity, $skipConflict = false): int
     {
         $tuple = $relation->tuple()->notNull();
 
         $query = $this->query('INSERT INTO')
-            ->append($this->tableOfRelation($relation))
+            ->append($this->getTableOfEntity($entity))
             ->append('(')
-            ->concat(', ', $tuple->names())
+            ->concat($tuple->names(), ',')
             ->append(') VALUES (')
-            ->values(', ', $tuple->values())
+            ->values($tuple->values(), ', ')
             ->append(')');
 
         if ($skipConflict) {

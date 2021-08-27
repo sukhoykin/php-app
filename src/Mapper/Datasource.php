@@ -14,7 +14,6 @@ class Datasource
     const DEFAULT_ID = 0;
 
     private $log;
-
     public $debug = false;
 
     private $definitions = [];
@@ -27,7 +26,7 @@ class Datasource
         $this->log = $log;
     }
 
-    public function define(string $dsn, string $name = self::DEFAULT_NAME)
+    public function define(string $dsn, ?string $name = self::DEFAULT_NAME)
     {
         if (isset($this->connections[$name])) {
             throw new Exception('Connection already open: ' . $name);
@@ -36,7 +35,7 @@ class Datasource
         $this->definitions[$name] = $dsn;
     }
 
-    public function getConnection($name = self::DEFAULT_NAME, $id = self::DEFAULT_ID): PDO
+    public function getConnection(?string $name = self::DEFAULT_NAME, int $id = self::DEFAULT_ID): PDO
     {
         if (!isset($this->definitions[$name])) {
             throw new Exception('Connection is not defined: ' . $name);
@@ -53,7 +52,7 @@ class Datasource
         return $this->connections[$name][$id];
     }
 
-    public function getMapper($class, $name = self::DEFAULT_NAME, $id = self::DEFAULT_ID): Mapper
+    public function getMapper($class, ?string $name = self::DEFAULT_NAME, int $id = self::DEFAULT_ID): Mapper
     {
         if (!isset($this->mappers[$name][$id][$class])) {
 

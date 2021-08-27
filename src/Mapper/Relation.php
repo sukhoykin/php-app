@@ -5,17 +5,28 @@ declare(strict_types=1);
 namespace App\Mapper;
 
 use ReflectionClass;
+use ReflectionProperty;
 
 class Relation
 {
+    const ATTRIBUTE_NOT_NULL = 0b00000001;
+    const ATTRIBUTE_NULL = 0b00000010;
+
     private static $REFLECTIONS;
 
     private $class;
+
+    private $properties;
     private $attributes;
 
     protected function __construct(string $class)
     {
         $this->class = $class;
+    }
+
+    protected function getClass(): string
+    {
+        return $this->class;
     }
 
     private function getReflection(string $class): ReflectionClass
@@ -31,26 +42,65 @@ class Relation
         return self::$REFLECTIONS[$class];
     }
 
-    protected function getClassPropertyNames(string $class, ?int $filter = null): array
+    protected function getClassPropertyNames(?string $class, ?int $filter = ReflectionProperty::IS_PUBLIC | ReflectionProperty::IS_PROTECTED): array
     {
-        return $this->properties ? $this->properties : $this->properties = array_map(
-            function (\ReflectionProperty $property) {
+        return array_map(
+            function (ReflectionProperty $property) {
                 return $property->getName();
             },
             $this->getReflection($class)->getProperties($filter)
         );
     }
 
-    public function getAttributes(): array
+    /**
+     * @param ?int $filter - Relation::ATTRIBUTE_*
+     */
+    public function attributes(?int $filter = 0): array
     {
-        return $this->attributes ? $this->attributes : $this->attributes = $this->getClassPropertyNames($this->class);
+        if (!isset($this->properties)) {
+            $this->properties = $this->getClassPropertyNames($this->getClass());
+        }
+
+        if (!isset($this->attributes[$filter])) {
+
+            $this->attributes = array_filter($this->properties, function (string $attribute) use ($filter) {
+
+                if ($filter & self::ATTRIBUTE_NOT_NULL && is_null($this->{$attribute})) {
+                    return false;
+                }
+
+                if ($filter & self::ATTRIBUTE_NULL && !is_null($this->{$attribute})) {
+                    return false;
+                }
+
+                return true;
+            });
+        }
+
+        return $this->attributes[$filter];
     }
 
-    public function toMap(): array
+    /**
+     * @param ?int $filter - Relation::ATTRIBUTE_*
+     */
+    public function values(?int $filter = 0): array
+    {
+        return array_map(
+            function (string $attribute) {
+                return $this->{$attribute};
+            },
+            $this->attributes($filter)
+        );
+    }
+
+    /**
+     * @param ?int $filter - Relation::ATTRIBUTE_*
+     */
+    public function map(?int $filter = 0): array
     {
         $map = [];
 
-        foreach ($this->getAttributes() as $attribute) {
+        foreach ($this->attributes($filter) as $attribute) {
             $map[$attribute] = $this->{$attribute};
         }
 
