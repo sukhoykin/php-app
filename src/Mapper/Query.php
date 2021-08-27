@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace App\Mapper;
 
-use App\Util\Profiler;
-use App\Util\Stdout;
-use Exception;
 use PDO;
+
+use App\Util\Profiler;
 use Psr\Log\LoggerInterface;
 
 class Query
@@ -24,16 +23,12 @@ class Query
     private $profiler;
     private $log;
 
-    public $debug = false;
-    public $silent = false;
-
     public function __construct(PDO $pdo, ?Datasource $datasource = null)
     {
         $this->pdo = $pdo;
         $this->datasource = $datasource;
 
         $this->profiler = new Profiler();
-        $this->log = new Stdout();
     }
 
     public function setLogger(LoggerInterface $log)
@@ -134,13 +129,6 @@ class Query
         return $this;
     }
 
-    private function checkStatement()
-    {
-        if (!$this->statement) {
-            throw new Exception('Illegal state: query is not prepared (call prepare first)');
-        }
-    }
-
     public function prepare(): Query
     {
         if ($this->statement) {
@@ -161,7 +149,7 @@ class Query
         return $this;
     }
 
-    public function execute(?array $params = null): Query
+    public function execute(?array $params = null): Result
     {
         $this->prepare();
 
@@ -185,84 +173,6 @@ class Query
             );
         }
 
-        return $this;
-    }
-
-    public function rowCount()
-    {
-        $this->checkStatement();
-        return $this->statement->rowCount();
-    }
-
-    public function fetch(?string $class = null)
-    {
-        $this->checkStatement();
-
-        $result = null;
-
-        if ($class) {
-
-            if ($class == stdClass::class) {
-                $result = $this->statement->fetch(PDO::FETCH_OBJ);
-            } else {
-                $result = $this->statement->fetchObject($class);
-            }
-
-            if ($result instanceof Entity) {
-                $result->setDatasource($this->datasource);
-            }
-        } else {
-            $result = $this->statement->fetch();
-        }
-
-        return $result ? $result : null;
-    }
-
-    public function fetchAll(?string $class = null)
-    {
-        $this->checkStatement();
-
-        if ($class) {
-            if ($class == stdClass::class) {
-                return $this->statement->fetchAll(PDO::FETCH_OBJ, $class);
-            }
-            return $this->statement->fetchAll(PDO::FETCH_CLASS, $class);
-        } else {
-            return $this->statement->fetchAll();
-        }
-    }
-
-    public function fetchAssoc()
-    {
-        $this->checkStatement();
-        $result = $this->statement->fetch(PDO::FETCH_ASSOC);
-        return $result ? $result : null;
-    }
-
-    public function fetchAllAssoc()
-    {
-        $this->checkStatement();
-        return $this->statement->fetchAll(PDO::FETCH_ASSOC);
-    }
-
-    public function fetchAllColumn(string $column)
-    {
-        $this->checkStatement();
-
-        $all = [];
-
-        foreach ($this->statement->fetchAll() as $row) {
-            $all[] = $row[$column];
-        }
-
-        return $all;
-    }
-
-    public function closeCursor()
-    {
-        if ($this->statement) {
-            $this->statement->closeCursor();
-            $this->statement = null;
-        }
+        return new Result($this->statement, $this->datasource);
     }
 }
