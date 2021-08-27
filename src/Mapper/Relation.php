@@ -4,20 +4,19 @@ declare(strict_types=1);
 
 namespace App\Mapper;
 
+use JsonSerializable;
 use ReflectionClass;
 use ReflectionProperty;
 
-class Relation
+class Relation implements JsonSerializable
 {
-    const ATTRIBUTE_NOT_NULL = 0b00000001;
-    const ATTRIBUTE_NULL = 0b00000010;
+    const ATTRIBUTE_NOT_NULL =      0b00000001;
+    const ATTRIBUTE_NULL =          0b00000010;
 
     private static $REFLECTIONS;
 
     private $class;
-
     private $properties;
-    private $attributes;
 
     protected function __construct(string $class)
     {
@@ -52,6 +51,19 @@ class Relation
         );
     }
 
+    protected function filterAttribute(int $filter, string $attribute)
+    {
+        if ($filter & self::ATTRIBUTE_NOT_NULL && is_null($this->{$attribute})) {
+            return false;
+        }
+
+        if ($filter & self::ATTRIBUTE_NULL && !is_null($this->{$attribute})) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * @param ?int $filter - Relation::ATTRIBUTE_*
      */
@@ -61,23 +73,19 @@ class Relation
             $this->properties = $this->getClassPropertyNames($this->getClass());
         }
 
-        if (!isset($this->attributes[$filter])) {
+        $attributes = $this->properties;
 
-            $this->attributes = array_filter($this->properties, function (string $attribute) use ($filter) {
+        if ($filter) {
 
-                if ($filter & self::ATTRIBUTE_NOT_NULL && is_null($this->{$attribute})) {
-                    return false;
+            $attributes = array_filter(
+                $attributes,
+                function (string $attribute) use ($filter) {
+                    return $this->filterAttribute($filter, $attribute);
                 }
-
-                if ($filter & self::ATTRIBUTE_NULL && !is_null($this->{$attribute})) {
-                    return false;
-                }
-
-                return true;
-            });
+            );
         }
 
-        return $this->attributes[$filter];
+        return $attributes;
     }
 
     /**
@@ -130,5 +138,10 @@ class Relation
         }
 
         return $relation;
+    }
+
+    public function jsonSerialize()
+    {
+        return $this->map(Relation::ATTRIBUTE_NOT_NULL);
     }
 }

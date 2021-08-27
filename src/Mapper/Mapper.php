@@ -84,78 +84,61 @@ class Mapper
         return (bool) $query->execute()->fetch();
     }
 
-    private function notNull(&$map)
-    {
-        foreach ($map as $key => $value) {
-            if (is_null($value)) {
-                unset($attributes[$key]);
-            }
-        }
-    }
-
     public function insert(Entity $entity, $skipConflict = false): int
     {
-        $tuple = $relation->tuple()->notNull();
+        $attributes = $entity->attributes(Relation::ATTRIBUTE_NOT_NULL);
+        $values = $entity->values(Relation::ATTRIBUTE_NOT_NULL);
+        $returning = $entity->attributes(Entity::ATTRIBUTE_PRIMARY_KEY | Relation::ATTRIBUTE_NULL);
 
-        $query = $this->query('INSERT INTO')
+        $result = $this->query('INSERT INTO')
             ->append($this->getTableOfEntity($entity))
+            ->ifonly(count($attributes) > 0)
             ->append('(')
-            ->concat($tuple->names(), ',')
+            ->concat($attributes, ',')
             ->append(') VALUES (')
-            ->values($tuple->values(), ', ')
-            ->append(')');
+            ->values($values, ',')
+            ->append(')')
+            ->ifonly($skipConflict)
+            ->append('ON CONFLICT DO NOTHING')
+            ->ifonly(count($returning) > 0)
+            ->append('RETURNING')
+            ->concat($returning, ',')
+            ->execute();
 
-        if ($skipConflict) {
-            $query->append('ON CONFLICT DO NOTHING');
-        }
+        $entity->setDatasource($this->datasource, count($returning) ? $result : null);
 
-        $returning = $relation->keys()->nulls()->names();
-
-        if (count($returning)) {
-            $query->append('RETURNING')->concat(', ', $returning);
-        }
-
-        $query->execute();
-
-        if (count($returning)) {
-
-            $row = $this->fetch();
-
-            foreach ($returning as $name) {
-                $relation->$name = $row[$name];
-            }
-        }
-
-        return $this->rowCount();
+        return $result->rowCount();
     }
 
-    public function update(Relation $relation): int
+    public function update(Entity $entity): int
     {
-        $tuple = $relation->values()->notNull();
+        $keyMap = $entity->map(Entity::ATTRIBUTE_PRIMARY_KEY);
+        $valueMap = $entity->map(Relation::ATTRIBUTE_NOT_NULL | Entity::ATTRIBUTE_REGULAR);
 
-        if (!$tuple->size()) {
-            throw new InvalidArgumentError('Update is empty');
-        }
-
-        $this->query('UPDATE')
-            ->append($this->tableOfRelation($relation))
+        $result = $this->query('UPDATE')
+            ->append($this->getTableOfEntity($entity))
+            ->ifonly(count($valueMap) > 0)
             ->append('SET')
-            ->assign(', ', $tuple->items())
+            ->assign($valueMap, ',')
+            ->ifonly(count($keyMap) > 0)
             ->append('WHERE')
-            ->assign(' AND ', $relation->keys()->items())
+            ->assign($keyMap, ' AND ')
             ->execute();
 
-        return $this->rowCount();
+        return $result->rowCount();
     }
 
-    public function delete(Relation $relation): int
+    public function delete(Entity $entity): int
     {
-        $this->query('DELETE FROM')
-            ->append($this->tableOfRelation($relation))
+        $keyMap = $entity->map(Entity::ATTRIBUTE_PRIMARY_KEY);
+
+        $result = $this->query('DELETE FROM')
+            ->append($this->getTableOfEntity($entity))
+            ->ifonly(count($keyMap) > 0)
             ->append('WHERE')
-            ->assign(' AND ', $relation->keys()->items())
+            ->assign($keyMap, ' AND ')
             ->execute();
 
-        return $this->rowCount();
+        return $result->rowCount();
     }
 }

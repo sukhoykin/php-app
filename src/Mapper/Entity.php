@@ -8,6 +8,9 @@ use Exception;
 
 class Entity extends Relation
 {
+    const ATTRIBUTE_PRIMARY_KEY =   0b00010000;
+    const ATTRIBUTE_REGULAR =       0b00100000;
+
     private $datasource;
 
     private $table;
@@ -25,9 +28,35 @@ class Entity extends Relation
         $this->table =  strtolower(implode('_', $matches[0]));
     }
 
-    public function setDatasource(?Datasource $datasource)
+    protected function filterAttribute(int $filter, string $attribute)
+    {
+        if (!parent::filterAttribute($filter, $attribute)) {
+            return false;
+        }
+
+        if ($filter & self::ATTRIBUTE_PRIMARY_KEY && !in_array($attribute, $this->getPrimaryKey())) {
+            return false;
+        }
+
+        if ($filter & self::ATTRIBUTE_REGULAR && in_array($attribute, $this->getPrimaryKey())) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public function setDatasource(?Datasource $datasource, ?Result $result = null)
     {
         $this->datasource = $datasource;
+
+        if ($result) {
+
+            $row = $result->fetchAssoc();
+
+            foreach ($row as $attribute => $value) {
+                $this->{$attribute} = $value;
+            }
+        }
     }
 
     public function getDatasource(): Datasource

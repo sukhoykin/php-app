@@ -14,6 +14,7 @@ class Query
     private $pdo;
     private $datasource;
 
+    private $ifonly;
     private $query = [];
     private $params = [];
 
@@ -51,6 +52,12 @@ class Query
                     break;
             }
         }
+    }
+
+    public function ifonly(bool $ifonly)
+    {
+        $this->ifonly = $ifonly;
+        return $this;
     }
 
     /**
