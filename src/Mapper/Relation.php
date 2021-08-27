@@ -67,10 +67,10 @@ class Relation implements JsonSerializable
     /**
      * @param ?int $filter - Relation::ATTRIBUTE_*
      */
-    public function attributes(?int $filter = 0): array
+    public function attributes(?int $filter = 0, ?string $class = null): array
     {
         if (!isset($this->properties)) {
-            $this->properties = $this->getClassPropertyNames($this->getClass());
+            $this->properties = $this->getClassPropertyNames($class ?? $this->getClass());
         }
 
         $attributes = $this->properties;
@@ -104,11 +104,11 @@ class Relation implements JsonSerializable
     /**
      * @param ?int $filter - Relation::ATTRIBUTE_*
      */
-    public function map(?int $filter = 0): array
+    public function map(?int $filter = 0, ?string $class = null): array
     {
         $map = [];
 
-        foreach ($this->attributes($filter) as $attribute) {
+        foreach ($this->attributes($filter, $class) as $attribute) {
             $map[$attribute] = $this->{$attribute};
         }
 

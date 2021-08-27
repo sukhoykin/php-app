@@ -55,7 +55,7 @@ class Datasource
     {
         if (!isset($this->mappers[$name][$id][$class])) {
 
-            $mapper = new $class($this->getConnection($name, $id));
+            $mapper = new $class($this->getConnection($name, $id), $this);
 
             if ($this->log) {
                 $mapper->setLogger($this->log);
