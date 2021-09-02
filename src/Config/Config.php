@@ -45,6 +45,7 @@ class Config
                 foreach ($config[$section] as $key => $value) {
                     $this->config[$section][$key] = $value;
                 }
+
             } else {
                 $this->config[$section] = $data;
             }
@@ -65,13 +66,54 @@ class Config
         return $this->config[$section];
     }
 
-    public function getArray(string $section): array
+    private $checks = [
+        'bool' => function ($val) {
+            return is_bool($val);
+        },
+        'int' => function ($val) {
+            return is_int($val);
+        },
+        'string' => function ($val) {
+            return is_string($val);
+        },
+        'array' => function ($val) {
+            return is_array($val);
+        }
+    ];
+
+    private function getType(string $type, string $section)
     {
-        if (!is_array($this->get($section))) {
-            throw new Exception(sprintf('Section "%s" must be an array', $section));
+        if (!isset($this->checks[$type])) {
+            throw new Exception(sprintf('Invalid check type: ' . $type));
+        }
+
+        $check = $this->checks[$type];
+
+        if (!$check($this->get($section))) {
+            throw new Exception(sprintf('Section "%s" must be "%s"', $section, $type));
         }
 
         return $this->get($section);
+    }
+
+    public function getBool(string $section): bool
+    {
+        return $this->getType('bool', $section);
+    }
+
+    public function getInt(string $section): int
+    {
+        return $this->getType('int', $section);
+    }
+
+    public function getString(string $section): string
+    {
+        return $this->getType('string', $section);
+    }
+
+    public function getArray(string $section): array
+    {
+        return $this->getType('array', $section);
     }
 
     public function getSection(string $section): Config
