@@ -18,7 +18,7 @@ abstract class ConfigurableProvider implements Provider, Configurable
         $this->config = $config;
     }
 
-    protected function getConfig(?string $class): Section
+    protected function getConfig(?string $class = null): Section
     {
         if (!$this->config) {
             throw new Exception(sprintf('Provider "%s" is not configured (call configurate() first)', get_class($this)));
