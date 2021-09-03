@@ -6,7 +6,7 @@ namespace Sukhoykin\App\Interfaces;
 
 use Psr\Container\ContainerInterface;
 
-interface Provider
+interface Service
 {
-    function provide(string $class, ContainerInterface $registry);
+    function setRegistry(ContainerInterface $registry);
 }

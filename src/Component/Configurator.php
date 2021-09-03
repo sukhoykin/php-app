@@ -6,7 +6,7 @@ namespace Sukhoykin\App\Component;
 
 use Sukhoykin\App\Component;
 use Sukhoykin\App\Composite;
-use Sukhoykin\App\Config\Section;
+use Sukhoykin\App\Config\Main;
 use Sukhoykin\App\Interfaces\Configurable;
 
 class Configurator implements Component
@@ -15,7 +15,7 @@ class Configurator implements Component
 
     public function __construct(string $main, ?string $overload = null, ?array $override = null)
     {
-        $config = new Section($main);
+        $config = new Main($main);
 
         if ($overload && file_exists($overload)) {
             $config->overload($overload);
@@ -33,7 +33,9 @@ class Configurator implements Component
         foreach ($root->getComponents() as $component) {
 
             if ($component instanceof Configurable) {
-                $component->configurate($this->config->getSection(get_class($component)));
+
+                $config = $this->config->getSection(get_class($component));
+                $component->configurate($config);
             }
         }
     }

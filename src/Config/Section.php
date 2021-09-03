@@ -57,6 +57,8 @@ class Section
 
             if (is_array($data)) {
 
+                $this->config[$section] = [];
+
                 foreach ($config[$section] as $key => $value) {
                     $this->config[$section][$key] = $value;
                 }
@@ -79,13 +81,23 @@ class Section
         if (!$this->has($section)) {
 
             if (is_null($default)) {
-                throw new Exception(sprintf('Section "%s" is not found for "%s"', $section, get_class($this)));
+                throw new Exception(sprintf('Section "%s" is not found in "%s"', $section, get_class($this)));
             } else {
                 return $default;
             }
         }
 
         return $this->config[$section];
+    }
+
+    public function getSections(): array
+    {
+        return array_keys($this->config);
+    }
+
+    public function getMap(): array
+    {
+        return $this->config;
     }
 
     private function getType(string $type, string $section, $default = null)
