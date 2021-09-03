@@ -2,53 +2,33 @@
 
 declare(strict_types=1);
 
-namespace App;
-
-use App\Interfaces\ProviderInterface;
+namespace Sukhoykin\App;
 
 use Exception;
 use Psr\Container\ContainerInterface;
+use Sukhoykin\App\Interfaces\Provider;
 
 class Container implements ContainerInterface
 {
     private $providers = [];
     private $services = [];
 
-    protected function provide($class, $providerClass)
+    public function define($class, Provider $provider)
     {
-        if (!class_exists($providerClass)) {
-            throw new Exception('Provider class ' . $providerClass . ' not exists');
+        if (isset($this->providers[$class])) {
+            throw new Exception("Provider of service '$class' already defined");
         }
 
-        try {
-
-            $provider = new $providerClass();
-
-            if ($provider instanceof ProviderInterface) {
-            } else {
-                throw new Exception();
-            }
-            //
-        } catch (Exception $e) {
-            throw new Exception('Provider ' . $providerClass . ' must implements ' . ProviderInterface::class);
-        }
-
-        $service = $provider->provide($class, $this);
-
-        if (!$service) {
-            throw new Exception('Provider ' . $providerClass . ' must return not null service instance');
-        }
-
-        return $service;
+        $this->providers[$class] = $provider;
     }
 
-    public function put($name, $service)
+    public function put($class, $service)
     {
-        if (isset($this->services[$name])) {
-            throw new Exception('Service ' . $name . ' already defined');
+        if (isset($this->services[$class])) {
+            throw new Exception("Service '$class' already exists");
         }
 
-        $this->services[$name] = $service;
+        $this->services[$class] = $service;
     }
 
     public function add($service)
@@ -57,35 +37,22 @@ class Container implements ContainerInterface
         $this->put($class, $service);
     }
 
-    public function define($class, string $provider = null)
-    {
-        if ($provider) {
-
-            if (isset($this->providers[$class])) {
-                throw new Exception('Service ' . $class . ' already defined');
-            }
-
-            $this->providers[$class] = $provider;
-            //
-        } else {
-            $this->add(new $class());
-        }
-    }
-
     public function get($class)
     {
-        if (!isset($this->services[$class])) {
-
-            if (!isset($this->providers[$class])) {
-                throw new Exception('Service ' . $class . ' is not defined');
-            }
-
-            $service = $this->provide($class, $this->providers[$class]);
-
-            $this->put($class, $service);
+        if (isset($this->services[$class])) {
+            return $this->services[$class];
         }
 
-        return $this->services[$class];
+        if (!isset($this->providers[$class])) {
+            throw new Exception("Provider of service '$class' is not defined");
+        }
+
+        $provider = $this->providers[$class];
+        $service = $provider->provide($class, $this);
+
+        $this->put($class, $service);
+
+        return $this->get($class);
     }
 
     public function has($class)
