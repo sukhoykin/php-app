@@ -71,25 +71,6 @@ class Section
         return $this;
     }
 
-    public function has(string $section): bool
-    {
-        return isset($this->config[$section]);
-    }
-
-    public function get(string $section, $default = null)
-    {
-        if (!$this->has($section)) {
-
-            if (is_null($default)) {
-                throw new Exception(sprintf('Section "%s" is not found in "%s"', $section, get_class($this)));
-            } else {
-                return $default;
-            }
-        }
-
-        return $this->config[$section];
-    }
-
     public function getSections(): array
     {
         return array_keys($this->config);
@@ -100,7 +81,17 @@ class Section
         return $this->config;
     }
 
-    private function getType(string $type, string $section, $default = null)
+    public function cast(string $classOfSection)
+    {
+        return new $classOfSection(null, $this->getMap());
+    }
+
+    public function has(string $section): bool
+    {
+        return isset($this->config[$section]);
+    }
+
+    private function check(string $section, $value, string $type)
     {
         if (!isset($this->checks[$type])) {
             throw new Exception(sprintf('Invalid check type: ' . $type));
@@ -108,34 +99,49 @@ class Section
 
         $check = $this->checks[$type];
 
-        if (!$check($this->get($section, $default))) {
+        if (!$check($value)) {
             throw new Exception(sprintf('Section "%s" must be "%s"', $section, $type));
         }
+    }
 
-        return $this->get($section, $default);
+    public function get(string $section, $default = null, ?string $type = null)
+    {
+        $value = $this->has($section) ? $this->config[$section] : $default;
+
+        if (is_null($value)) {
+            if ($type) {
+                throw new Exception(sprintf('Section "%s:%s" is not found in "%s"', $section, $type, get_class($this)));
+            } else {
+                throw new Exception(sprintf('Section "%s" is not found in "%s"', $section, get_class($this)));
+            }
+        }
+
+        $this->check($section, $value, $type);
+
+        return $value;
     }
 
     public function getBool(string $section, ?bool $default = null): bool
     {
-        return $this->getType(self::TYPE_BOOL, $section, $default);
+        return $this->get($section, $default, self::TYPE_BOOL);
     }
 
     public function getInt(string $section, ?int $default = null): int
     {
-        return $this->getType(self::TYPE_INT, $section, $default);
+        return $this->get($section, $default, self::TYPE_INT);
     }
 
     public function getString(string $section, ?string $default = null): string
     {
-        return $this->getType(self::TYPE_STRING, $section, $default);
+        return $this->get($section, $default, self::TYPE_STRING);
     }
 
     public function getArray(string $section, ?array $default = null): array
     {
-        return $this->getType(self::TYPE_ARRAY, $section, $default);
+        return $this->get($section, $default, self::TYPE_ARRAY);
     }
 
-    public function getSection(string $section, ?string $class = null, ?array $default = null): Section
+    public function getSection(string $section, ?array $default = null, ?string $class = null): Section
     {
         $data = $this->getArray($section, $default);
         return ($class ? new $class(null, $data) : new Section(null, $data));

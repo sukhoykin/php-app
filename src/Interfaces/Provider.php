@@ -8,5 +8,5 @@ use Psr\Container\ContainerInterface;
 
 interface Provider
 {
-    function provide(string $class, ContainerInterface $registry);
+    function provide(string $class, ContainerInterface $registry): object;
 }

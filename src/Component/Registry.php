@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Sukhoykin\App\Component;
 
-use Exception;
-use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use Psr\Container\ContainerInterface;
+
 use Sukhoykin\App\Component;
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Container;
 use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
+
+use Exception;
 
 class Registry extends Container implements Component, Configurable
 {
