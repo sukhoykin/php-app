@@ -46,7 +46,7 @@ class SlimMiddleware implements Configurable, Component
 
         if ($this->config->has('error')) {
 
-            foreach ($this->config->getArray('middleware') as $type => $class) {
+            foreach ($this->config->getArray('error') as $type => $class) {
                 $middleware->setErrorHandler($type, $registry->get($class));
             }
         }

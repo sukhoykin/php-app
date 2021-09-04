@@ -48,6 +48,8 @@ class SlimApplication extends Composite implements Configurable
         $this->request = $serverRequestCreator->createServerRequestFromGlobals();
 
         parent::invoke($root);
+
+        $this->app->run($this->request);
     }
 
     public function getApp(): App
@@ -58,10 +60,5 @@ class SlimApplication extends Composite implements Configurable
     public function getRequest(): Request
     {
         return $this->request;
-    }
-
-    public function run()
-    {
-        $this->app->run($this->request);
     }
 }

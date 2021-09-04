@@ -3,6 +3,10 @@
 
 declare(strict_types=1);
 
+const ROOT = __DIR__ . '/..';
+
+require ROOT . '/vendor/autoload.php';
+
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Component\Config;
 use Sukhoykin\App\Component\Registry;
@@ -11,10 +15,6 @@ use Sukhoykin\App\Console\Arguments;
 use Sukhoykin\App\Provider\MonologProvider;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
-
-const ROOT = __DIR__ . '/..';
-
-require ROOT . '/vendor/autoload.php';
 
 $arguments = new Arguments($argv);
 

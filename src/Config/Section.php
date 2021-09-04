@@ -119,7 +119,9 @@ class Section
             }
         }
 
-        $this->check($section, $value, $type);
+        if ($type) {
+            $this->check($section, $value, $type);
+        }
 
         return $value;
     }

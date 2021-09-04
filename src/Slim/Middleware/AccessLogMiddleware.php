@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Sukhoykin\App\Slim\Middleware;
 
-use App\Util\Profiler;
 use Psr\Container\ContainerInterface;
 
 use Psr\Http\Message\ResponseInterface as Response;
@@ -16,10 +15,15 @@ use Sukhoykin\App\Interfaces\Service;
 
 class AccessLogMiddleware implements Service
 {
-    private $profiler = new Profiler();
+    private $profiler;
     private $log;
 
     public $debug = false;
+
+    public function __construct()
+    {
+        //$this->profiler = new Profiler();
+    }
 
     public function setRegistry(ContainerInterface $registry)
     {
@@ -28,7 +32,7 @@ class AccessLogMiddleware implements Service
 
     public function __invoke(Request $request, RequestHandler $handler): Response
     {
-        $this->profiler->start('request');
+        //$this->profiler->start('request');
 
         $query = $request->getUri()->getQuery();
 
@@ -60,7 +64,7 @@ class AccessLogMiddleware implements Service
                 $query ? '?' : '',
                 $query ? $query : '',
                 $response->getStatusCode(),
-                $this->profiler->took('request'),
+                0, //$this->profiler->took('request'),
                 0, //$this->profiler->took(Application::METRIC_APP),
                 $body ? "\n" : '',
                 $body ? $body : ''
@@ -74,7 +78,7 @@ class AccessLogMiddleware implements Service
                 $query ? '?' : '',
                 $query ? $query : '',
                 $response->getStatusCode(),
-                $this->profiler->took('request'),
+                0, //$this->profiler->took('request'),
                 0 //$this->profiler->took(Application::METRIC_APP)
             ));
         }
