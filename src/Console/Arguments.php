@@ -2,42 +2,30 @@
 
 declare(strict_types=1);
 
-namespace App\Console;
+namespace Sukhoykin\App\Console;
 
 class Arguments
 {
     private $argv;
 
-    private $command;
-
-    public function __construct($argv = [], $shiftScript = true)
+    public function __construct(array $argv = [], $shiftScript = true)
     {
-        if ($shiftScript) {
-            array_shift($argv);
-        }
-
         $this->argv = $argv;
+
+        if ($shiftScript) {
+            $this->shift();
+        }
     }
 
-    public function argv(): array
+    public function values(): array
     {
         return $this->argv;
     }
 
-    public function count(): int
+    public function has(string $value): bool
     {
-        return count($this->argv);
-    }
-
-    public function shift(): ?string
-    {
-        return array_shift($this->argv);
-    }
-
-    public function has($name): bool
-    {
-        foreach ($this->argv as $arg) {
-            if ($arg == $name) {
+        foreach ($this->values() as $arg) {
+            if ($arg == $value) {
                 return true;
             }
         }
@@ -45,30 +33,18 @@ class Arguments
         return false;
     }
 
-    public function option($name): ?string
+    public function first(): ?string
     {
-        for ($i = 0; $i < count($this->argv); $i++) {
-
-            if ($this->argv[$i] == $name) {
-
-                if ($i + 1 < count($this->argv)) {
-                    return $this->argv[$i + 1];
-                } else {
-                    break;
-                }
-            }
-        }
-
-        return null;
+        return $this->argv[0] ?? null;
     }
 
-    public function shiftCommand()
+    public function shift(): ?string
     {
-        return $this->command = $this->shift();
+        return array_shift($this->argv);
     }
 
-    public function getCommand()
+    public function count(): int
     {
-        return $this->command;
+        return count($this->argv);
     }
 }

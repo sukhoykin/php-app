@@ -9,15 +9,19 @@ use Sukhoykin\App\Composite;
 use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
 use Sukhoykin\App\Interfaces\Executable;
-
 use Psr\Log\LoggerInterface;
 use Sukhoykin\App\Console\Arguments;
+
+use Sukhoykin\App\Console\UsageError;
+use Exception;
 
 class Console implements Component, Configurable, Executable
 {
     const USAGE_ERROR = 1;
+    const INTERNAL_ERROR = 2;
 
-    private $config, $arguments, $registry, $log;
+    private $config, $arguments;
+    private $commands = [];
 
     public function __construct(Arguments $arguments)
     {
@@ -31,39 +35,74 @@ class Console implements Component, Configurable, Executable
 
     public function invoke(Composite $root)
     {
-        echo "EXEC\n";
         /** @var Registry */
-        $this->registry = $root->get(Registry::class);
-        $this->log = $this->registry->get(LoggerInterface::class);
+        $registry = $root->get(Registry::class);
+        $log = $registry->get(LoggerInterface::class);
 
-        $this->execute($this->arguments);
+        foreach ($this->config->getSections() as $class) {
+
+            $command = $registry->get($class);
+
+            if ($command instanceof Configurable) {
+                $command->configurate($this->config->getSection($class));
+            }
+
+            $this->commands[$command->getName()] = $command;
+        }
+
+        $status = 0;
+
+        try {
+            $this->execute($this->arguments);
+        } catch (UsageError $e) {
+            $status  = self::USAGE_ERROR;
+            $log->error(sprintf("%s\nUsage: %s", $e->getMessage(), $e->getExecutable()->getUsage()));
+        } catch (Exception $e) {
+            $status  = $e->getCode() ? $e->getCode() : self::INTERNAL_ERROR;
+            $log->error($e);
+        }
+
+        exit($status);
     }
 
-    public function getDescription(): string
+    public function getName(): string
     {
-        return 'Console commands and applications';
+        return 'console';
     }
 
     public function getUsage(): string
     {
-        return '<command> [args] [-v]';
+        $usage[] = '<command> [args] [-v]';
+
+        foreach ($this->commands as $name => $command) {
+            $usage[] = sprintf('  %s  %s', $name, $command->getDescription());
+        }
+
+        return implode("\n", $usage);
     }
 
-    public function execute(Arguments $arguments): int
+    public function getDescription(): string
     {
-        
-        $command = $arguments->shift();
+        return 'Console application set';
+    }
+
+    public function execute(Arguments $arguments)
+    {
+        $command = $this->arguments->shift();
 
         if (is_null($command)) {
-            return self::USAGE_ERROR;
+            throw new UsageError('Command name required', $this);
         }
 
-        if (!isset($this->config[$command])) {
-            $this->log->error("Invalid command '$command'");
-            return self::USAGE_ERROR;
+        if ($command == 'help') {
+            $this->log->info(sprintf("%s\nUsage: %s", $this->getDescription(), $this->getUsage()));
+            return;
         }
 
-        $instance = $this->registry->get(Registry::class);
-        return $instance->execute($arguments);
+        if (!isset($this->commands[$command])) {
+            throw new UsageError("Invalid command '$command'", $this);
+        }
+
+        $this->commands[$command]->execute($this->arguments);
     }
 }

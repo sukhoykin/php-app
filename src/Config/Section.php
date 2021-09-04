@@ -51,23 +51,26 @@ class Section
         return $this;
     }
 
+    private function merge_recursive(array &$config, array $merge)
+    {
+        foreach ($merge as $section => $data) {
+            
+            if (!is_array($data)) {
+                $config[$section] = $data;
+                continue;
+            }
+
+            if (!isset($config[$section])) {
+                $config[$section] = [];
+            }
+
+            $this->merge_recursive($config[$section], $data);
+        }
+    }
+
     public function override(array $config): Section
     {
-        foreach ($config as $section => $data) {
-
-            if (is_array($data)) {
-
-                $this->config[$section] = [];
-
-                foreach ($config[$section] as $key => $value) {
-                    $this->config[$section][$key] = $value;
-                }
-
-            } else {
-                $this->config[$section] = $data;
-            }
-        }
-
+        $this->merge_recursive($this->config, $config);
         return $this;
     }
 

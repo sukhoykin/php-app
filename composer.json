@@ -9,9 +9,13 @@
   ],
   "config": {
     "platform": {
-      "php": "7.1.0"
-    }
+      "php": "7.2.0"
+    },
+    "bin-dir": "bin"
   },
+  "bin": [
+    "bin/console.php"
+  ],
   "autoload": {
     "psr-4": {
       "Sukhoykin\\App\\": "src"

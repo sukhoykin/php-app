@@ -9,7 +9,7 @@ use Sukhoykin\App\Composite;
 use Sukhoykin\App\Config\Main;
 use Sukhoykin\App\Interfaces\Configurable;
 
-class Configurator implements Component
+class Config implements Component
 {
     private $config;
 

@@ -8,7 +8,8 @@ use Sukhoykin\App\Console\Arguments;
 
 interface Executable
 {
+    function getName(): string;
     function getUsage(): string;
     function getDescription(): string;
-    function execute(Arguments $arguments): int;
+    function execute(Arguments $arguments);
 }

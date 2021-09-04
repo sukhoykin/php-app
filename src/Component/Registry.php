@@ -12,6 +12,7 @@ use Sukhoykin\App\Composite;
 use Sukhoykin\App\Container;
 use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
+use Sukhoykin\App\Interfaces\Service;
 
 use Exception;
 
@@ -52,11 +53,17 @@ class Registry extends Container implements Component, Configurable
         }
 
         $reflection = new ReflectionClass($class);
-        $parameters = $reflection->getConstructor()->getParameters();
+        $constructor = $reflection->getConstructor();
 
-        if (!count($parameters)) {
+        if (!$constructor || !count($parameters = $constructor->getParameters())) {
 
-            $this->add(new $class());
+            $service = new $class();
+
+            if ($service instanceof Service) {
+                $service->setRegistry($this);
+            }
+
+            $this->add($service);
             return parent::get($class);
         }
 
