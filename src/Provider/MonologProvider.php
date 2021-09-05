@@ -2,25 +2,20 @@
 
 declare(strict_types=1);
 
-namespace App\Provider;
+namespace Sukhoykin\App\Provider;
 
-use App\Interfaces\ProviderInterface;
-use Psr\Container\ContainerInterface;
-
-use App\Util\Config;
+use Monolog\Logger;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
-use Monolog\Logger;
 
-class MonologProvider implements ProviderInterface
+use Psr\Container\ContainerInterface;
+use Sukhoykin\App\Config\Monolog;
+
+class MonologProvider extends ConfigurableProvider
 {
-    const CONFIG = 'monolog';
-
-    public function provide(string $class, ContainerInterface $container)
+    public function provide(string $class, ContainerInterface $registry): Logger
     {
-        $config = $container->get(Config::class);
-
-        $monolog = $config->{self::CONFIG};
+        $monolog = $this->getConfig(Monolog::class);
 
         $formatter = new LineFormatter($monolog->format, $monolog->datetime);
         $formatter->includeStacktraces();

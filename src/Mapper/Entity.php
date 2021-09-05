@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Mapper;
+namespace Sukhoykin\App\Mapper;
 
 use Exception;
 

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Util;
+namespace Sukhoykin\App\Util;
 
 class Profiler
 {

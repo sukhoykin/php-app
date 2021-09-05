@@ -1,24 +1,31 @@
 <?php
 
-namespace App\Console;
+namespace Sukhoykin\App\Console;
 
-use App\Controller;
-use App\Database\Database;
-use App\Interfaces\CommandInterface;
-use App\Error\UsageError;
-use App\Util\Config;
+use Sukhoykin\App\Interfaces\Configurable;
+use Sukhoykin\App\Interfaces\Executable;
+use Sukhoykin\App\Interfaces\Service;
+
+use Psr\Container\ContainerInterface;
+use Sukhoykin\App\Config\Section;
+use Sukhoykin\App\Mapper\Datasource;
+
+use Sukhoykin\App\Console\Arguments;
+use Sukhoykin\App\Console\UsageError;
 use Exception;
+use Psr\Log\LoggerInterface;
 
-class SchemaCommand extends Controller implements CommandInterface
+class SchemaCommand implements Configurable, Executable, Service
 {
     const CONFIG = 'schema';
 
+    private $datasource, $log;
     private $path;
 
     const USAGE = "schema <command> [args]
-  list                    list schemas and versions
-  migrate                 init or migrate schema to last version
-  drop <name> [--force]   drop schema";
+  list                      list schemas and versions
+  migrate                   init or migrate schema to last version
+  drop <schema> [--force]   drop schema";
 
     private function input($prompt)
     {
@@ -27,16 +34,40 @@ class SchemaCommand extends Controller implements CommandInterface
         return trim(fgets($fp));
     }
 
-    public function run($args)
+    public function setRegistry(ContainerInterface $registry)
     {
-        if ($args->has('help') || $args->count() < 1) {
-            throw new UsageError(self::USAGE);
+        $this->datasource = $registry->get(Datasource::class);
+        $this->log = $registry->get(LoggerInterface::class);
+    }
+
+    public function getName(): string
+    {
+        return 'schema';
+    }
+
+    public function getUsage(): string
+    {
+        return self::USAGE;
+    }
+
+    public function getDescription(): string
+    {
+        return 'Database Schema Migration';
+    }
+
+    public function configurate(Section $config)
+    {
+        $this->path = $config->getString('path');
+    }
+
+    public function execute(Arguments $arguments)
+    {
+        if ($arguments->has('help') || $arguments->count() < 1) {
+            $this->log->info(sprintf("%s\nUsage: %s", $this->getDescription(), $this->getUsage()));
+            return;
         }
 
-        $config = $this->container()->get(Config::class);
-        $this->path = $config->{self::CONFIG};
-
-        $command = $args->shift();
+        $command = $arguments->shift();
 
         switch ($command) {
 
@@ -49,11 +80,11 @@ class SchemaCommand extends Controller implements CommandInterface
                 break;
 
             case 'drop':
-                $this->drop($args);
+                $this->drop($arguments);
                 break;
 
             default:
-                throw new \Exception('Invalid command: ' . $command);
+                throw new UsageError("Invalid command '$command'", $this);
         }
     }
 
@@ -62,7 +93,7 @@ class SchemaCommand extends Controller implements CommandInterface
         $path = $this->path . '/schema.php';
 
         if (!file_exists($path)) {
-            throw new Exception('Schema config not found: ' . $path);
+            throw new Exception("Schema config not found: $path");
         }
 
         return include $path;
@@ -73,7 +104,7 @@ class SchemaCommand extends Controller implements CommandInterface
         $config = $this->schemaConfig();
 
         foreach ($config as $schema => $version) {
-            echo '  ', $schema, ': ', $version, ' (', $this->getSchemaVersion($schema), ')',  "\n";
+            $this->log->info(sprintf('%s: %s (%s)', $schema, $version, $this->getSchemaVersion($schema)));
         }
     }
 
@@ -88,24 +119,23 @@ class SchemaCommand extends Controller implements CommandInterface
 
     private function migrateSchema($schema, $version)
     {
-        echo 'Migrate: ', $schema, "\n";
+        $this->log->info("Migrate '$schema'");
 
         for ($i = $this->getSchemaVersion($schema) + 1; $i <= $version; $i++) {
 
-            echo ' version: ', $i, "\n";
+            $this->log->info("  version '$i'");
 
             $path = $this->path . '/' . $schema . '.' . $i . '.sql';
             $command = @file_get_contents($path);
 
             if ($command === false) {
-                throw new \Exception('Could not read schema: ' . $path);
+                throw new \Exception("Could not read schema: $path");
             }
 
-            $database = $this->container()->get(Database::class);
-            $connection = $database->connection();
+            $connection = $this->datasource->getConnection();
 
             $connection->beginTransaction();
-            $connection->pdo()->exec($command);
+            $connection->exec($command);
             $this->setSchemaVersion($schema, $i);
             $connection->commit();
         }
@@ -125,21 +155,20 @@ class SchemaCommand extends Controller implements CommandInterface
         $table = $this->schemaTable($schema);
         $version = 0;
 
-        $database = $this->container()->get(Database::class);
-        $connection = $database->connection();
+        $connection = $this->datasource->getConnection();
 
-        $connection->prepare('CREATE TABLE IF NOT EXISTS ' . $table . ' (version int NOT NULL)');
-        $connection->execute();
+        $ps = $connection->prepare('CREATE TABLE IF NOT EXISTS ' . $table . ' (version int NOT NULL)');
+        $ps->execute();
 
-        $connection->prepare('SELECT version FROM ' . $table);
-        $connection->execute();
+        $ps = $connection->prepare('SELECT version FROM ' . $table);
+        $ps->execute();
 
-        if ($row = $connection->fetch()) {
+        if ($row = $ps->fetch()) {
             $version = $row['version'];
         } else {
 
-            $connection->prepare('INSERT INTO ' . $table . ' VALUES (?)');
-            $connection->execute([$version]);
+            $ps = $connection->prepare('INSERT INTO ' . $table . ' VALUES (?)');
+            $ps->execute([$version]);
         }
 
         return $version;
@@ -149,20 +178,19 @@ class SchemaCommand extends Controller implements CommandInterface
     {
         $table = $this->schemaTable($schema);
 
-        $database = $this->container()->get(Database::class);
-        $connection = $database->connection();
+        $connection = $this->datasource->getConnection();
 
-        $connection->prepare('UPDATE ' . $table . ' SET version = ?');
-        $connection->execute([$version]);
+        $ps = $connection->prepare('UPDATE ' . $table . ' SET version = ?');
+        $ps->execute([$version]);
     }
 
-    private function drop($args)
+    private function drop(Arguments $args)
     {
-        if ($args->count() < 1) {
-            throw new UsageError(self::USAGE, 1);
-        }
+        $schema = $args->shift();
 
-        $name = $args->shift();
+        if (!$schema) {
+            throw new UsageError('Schema required', $this);
+        }
 
         if (!$args->has('--force')) {
 
@@ -173,21 +201,20 @@ class SchemaCommand extends Controller implements CommandInterface
             }
         }
 
-        $path = $this->path . '/' . $name . '.drop.sql';
+        $path = $this->path . '/' . $schema . '.drop.sql';
         $command = @file_get_contents($path);
 
         if ($command === false) {
-            throw new Exception('Could not read schema: ' . $path);
+            throw new Exception("Could not read schema: $path");
         }
 
-        $database = $this->container()->get(Database::class);
-        $connection = $database->connection();
+        $connection = $this->datasource->getConnection();
 
         $connection->beginTransaction();
-        $connection->pdo()->exec($command);
+        $connection->exec($command);
         $connection->commit();
 
-        $connection->prepare('DROP TABLE IF EXISTS ' . $this->schemaTable($name));
-        $connection->execute();
+        $ps = $connection->prepare('DROP TABLE IF EXISTS ' . $this->schemaTable($schema));
+        $ps->execute();
     }
 }

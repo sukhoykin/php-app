@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Client;
+namespace Sukhoykin\App\Client;
 
 use Exception;
 use App\Error\HttpError;

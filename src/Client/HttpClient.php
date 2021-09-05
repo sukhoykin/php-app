@@ -2,14 +2,15 @@
 
 declare(strict_types=1);
 
-namespace App\Client;
+namespace Sukhoykin\App\Client;
 
 use Psr\Log\LoggerInterface;
-use App\Util\Profiler;
-use App\Util\Stdout;
+use Psr\Log\LoggerAwareInterface;
+use Sukhoykin\App\Util\Profiler;
+
 use Exception;
 
-class HttpClient
+class HttpClient implements LoggerAwareInterface
 {
     const OPTION_AUTH = 'auth';
     const OPTION_HEADERS = 'headers';
@@ -32,7 +33,6 @@ class HttpClient
     public function __construct()
     {
         $this->profiler = new Profiler();
-        $this->log = new Stdout();
     }
 
     public function setLogger(LoggerInterface $log)

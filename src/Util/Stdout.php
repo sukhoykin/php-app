@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Util;
+namespace Sukhoykin\App\Util;
 
 use Psr\Log\LoggerInterface;
 
@@ -50,6 +50,6 @@ class Stdout implements LoggerInterface
 
     public function log($level, $message, array $context = array())
     {
-        echo $level, ': ', $message, "\n";
+        echo $level, ' ', $message, "\n";
     }
 }
