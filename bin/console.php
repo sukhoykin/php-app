@@ -3,9 +3,12 @@
 
 declare(strict_types=1);
 
-const ROOT = __DIR__ . '/..';
-
-require ROOT . '/vendor/autoload.php';
+foreach (array(__DIR__ . '/../../autoload.php', __DIR__ . '/../vendor/autoload.php', __DIR__ . '/vendor/autoload.php') as $file) {
+    if (file_exists($file)) {
+        require $file;
+        break;
+    }
+}
 
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Component\Config;
@@ -16,11 +19,20 @@ use Sukhoykin\App\Provider\MonologProvider;
 use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 
+$ROOT = dirname(__DIR__);
+
+$CONFIG_MAIN = $ROOT . '/main.php';
+$CONFIG_LOCAL = $ROOT . '/main.local.php';
+
+if (!file_exists($CONFIG_MAIN)) {
+    die(sprintf("Config not defined: %s\n", $CONFIG_MAIN));
+}
+
 $arguments = new Arguments($argv);
 
 $config = new Config(
-    ROOT . '/main.php',
-    ROOT . '/main.local.php',
+    $CONFIG_MAIN,
+    $CONFIG_LOCAL,
     [
         Registry::class => [
             LoggerInterface::class => [
