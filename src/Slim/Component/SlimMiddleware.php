@@ -47,7 +47,7 @@ class SlimMiddleware implements Configurable, Component
         $shutdown = new ShutdownHandler($slim->getRequest(), $default);
 
         register_shutdown_function($shutdown);
-        set_error_handler([$this, 'phpErrorHandler']);
+        set_error_handler([$default, 'phpErrorHandler']);
         error_reporting(0);
 
         $middleware = $app->addErrorMiddleware(false, false, false);
