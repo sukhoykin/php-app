@@ -7,7 +7,6 @@ namespace Sukhoykin\App;
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Component\Config;
 use Sukhoykin\App\Component\Registry;
-use Sukhoykin\App\Component\Console as ConsoleComponent;
 use Sukhoykin\App\Console\Arguments;
 use Sukhoykin\App\Provider\MonologProvider;
 use Monolog\Logger;
@@ -37,7 +36,7 @@ class Console extends Composite
 
         $this->add($config);
         $this->add(new Registry());
-        $this->add(new ConsoleComponent($arguments));
+        $this->add(new \Sukhoykin\App\Component\Console($arguments));
     }
 
     public function start()
