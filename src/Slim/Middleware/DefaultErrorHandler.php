@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Sukhoykin\App\Slim\Middleware;
 
-use Sukhoykin\App\Slim\SlimApplication;
+use Sukhoykin\App\Slim\Component\SlimApplication;
 
 use Psr\Log\LoggerInterface;
 use Psr\Http\Message\ResponseInterface;

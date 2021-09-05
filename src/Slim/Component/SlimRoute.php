@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Sukhoykin\App\Slim;
+namespace Sukhoykin\App\Slim\Component;
 
 use Sukhoykin\App\Component;
 use Sukhoykin\App\Composite;

@@ -7,8 +7,9 @@ namespace Sukhoykin\App\Mapper;
 use PDO;
 use Psr\Log\LoggerInterface;
 use Exception;
+use Psr\Log\LoggerAwareInterface;
 
-class Datasource
+class Datasource implements LoggerAwareInterface
 {
     const DEFAULT_NAME = 'default';
     const DEFAULT_ID = 0;

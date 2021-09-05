@@ -94,17 +94,48 @@ class Section
         return isset($this->config[$section]);
     }
 
-    private function check(string $section, $value, string $type)
+    private function getCheck(string $type)
     {
         if (!isset($this->checks[$type])) {
             throw new Exception(sprintf('Invalid check type: ' . $type));
         }
 
-        $check = $this->checks[$type];
+        return $this->checks[$type];
+    }
+
+    private function check(string $section, $value, string $type)
+    {
+        $check = $this->getCheck($type);
 
         if (!$check($value)) {
             throw new Exception(sprintf('Section "%s" must be "%s"', $section, $type));
         }
+    }
+
+    public function isType(string $section, string $type)
+    {
+        $check = $this->getCheck($type);
+        return $check($this->get($section));
+    }
+
+    public function isBool(string $section): bool
+    {
+        return $this->isType($section, self::TYPE_BOOL);
+    }
+
+    public function isInt(string $section): bool
+    {
+        return $this->isType($section, self::TYPE_INT);
+    }
+
+    public function isString(string $section): bool
+    {
+        return $this->isType($section, self::TYPE_STRING);
+    }
+
+    public function isArray(string $section): bool
+    {
+        return $this->isType($section, self::TYPE_ARRAY);
     }
 
     public function get(string $section, $default = null, ?string $type = null)

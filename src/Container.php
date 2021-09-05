@@ -8,12 +8,37 @@ use Exception;
 use Psr\Container\ContainerInterface;
 use Sukhoykin\App\Interfaces\Provider;
 
+class DefaultProvider implements Provider
+{
+    private $class;
+
+    public function __construct(string $class)
+    {
+        $this->class = $class;
+    }
+
+    public function provide(string $class, ContainerInterface $registry): object
+    {
+        return new $this->class();
+    }
+}
+
 class Container implements ContainerInterface
 {
+    private $classes = [];
     private $providers = [];
     private $services = [];
 
-    public function define($class, Provider $provider)
+    public function define(string $class, string $implementClass)
+    {
+        if (isset($this->classes[$class])) {
+            throw new Exception("Class implementation of service '$class' already defined as '$this->classes[$class]'");
+        }
+
+        $this->classes[$class] = $implementClass;
+    }
+
+    public function provide(string $class, Provider $provider)
     {
         if (isset($this->providers[$class])) {
             throw new Exception("Provider of service '$class' already defined");
@@ -22,7 +47,7 @@ class Container implements ContainerInterface
         $this->providers[$class] = $provider;
     }
 
-    public function put($class, $service)
+    public function put(string $class, object $service)
     {
         if (isset($this->services[$class])) {
             throw new Exception("Service '$class' already exists");
@@ -31,7 +56,7 @@ class Container implements ContainerInterface
         $this->services[$class] = $service;
     }
 
-    public function add($service)
+    public function add(object $service)
     {
         $class = get_class($service);
         $this->put($class, $service);
@@ -43,11 +68,20 @@ class Container implements ContainerInterface
             return $this->services[$class];
         }
 
-        if (!isset($this->providers[$class])) {
-            throw new Exception("Provider of service '$class' is not defined");
+        $provider = null;
+
+        if (isset($this->classes[$class])) {
+            $provider = new DefaultProvider($this->classes[$class]);
         }
 
-        $provider = $this->providers[$class];
+        if (isset($this->providers[$class])) {
+            $provider = $this->providers[$class];
+        }
+
+        if (!$provider) {
+            throw new Exception("Service '$class' is not defined");
+        }
+
         $service = $provider->provide($class, $this);
 
         $this->put($class, $service);
@@ -57,6 +91,6 @@ class Container implements ContainerInterface
 
     public function has($class)
     {
-        return isset($this->services[$class]) || isset($this->providers[$class]);
+        return isset($this->services[$class]) || isset($this->providers[$class]) || isset($this->classes[$class]);
     }
 }

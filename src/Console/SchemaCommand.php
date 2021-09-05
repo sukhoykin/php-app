@@ -104,7 +104,7 @@ class SchemaCommand implements Configurable, Executable, Service
         $config = $this->schemaConfig();
 
         foreach ($config as $schema => $version) {
-            echo '  ', $schema, ': ', $version, ' (', $this->getSchemaVersion($schema), ')',  "\n";
+            $this->log->info(sprintf('%s: %s (%s)', $schema, $version, $this->getSchemaVersion($schema)));
         }
     }
 

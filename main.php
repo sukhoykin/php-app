@@ -14,9 +14,9 @@ use Sukhoykin\App\Mapper\Datasource;
 use Sukhoykin\App\Console\SchemaCommand;
 
 use Slim\App;
-use Sukhoykin\App\Slim\SlimApplication;
-use Sukhoykin\App\Slim\SlimMiddleware;
-use Sukhoykin\App\Slim\SlimRoute;
+use Sukhoykin\App\Slim\Component\SlimApplication;
+use Sukhoykin\App\Slim\Component\SlimMiddleware;
+use Sukhoykin\App\Slim\Component\SlimRoute;
 use Sukhoykin\App\Slim\Middleware\AccessLogMiddleware;
 use Sukhoykin\App\Slim\Middleware\ContentTypeMiddleware;
 use Sukhoykin\App\Slim\Middleware\ContextMiddleware;

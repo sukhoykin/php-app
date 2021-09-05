@@ -29,6 +29,12 @@ class Registry extends Container implements Component, Configurable
     {
         foreach ($this->config->getSections() as $classOfService) {
 
+            if ($this->config->isString($classOfService)) {
+
+                $this->define($classOfService, $this->config->getString($classOfService));
+                continue;
+            }
+
             $providers = $this->config->getSection($classOfService);
 
             foreach ($providers->getSections() as $classOfProvider) {
@@ -42,7 +48,7 @@ class Registry extends Container implements Component, Configurable
                 break;
             }
 
-            $this->define($classOfService, $provider);
+            $this->provide($classOfService, $provider);
         }
     }
 
