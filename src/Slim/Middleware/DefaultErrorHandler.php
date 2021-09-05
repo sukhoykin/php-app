@@ -4,35 +4,30 @@ declare(strict_types=1);
 
 namespace Sukhoykin\App\Slim\Middleware;
 
-use Sukhoykin\App\Slim\Component\SlimApplication;
-
 use Psr\Log\LoggerInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Slim\Exception\HttpException;
 
-use Slim\Interfaces\ErrorHandlerInterface;
+use Psr\Http\Message\ResponseFactoryInterface;
+use Psr\Log\LoggerAwareInterface;
+use Sukhoykin\App\Interfaces\ErrorHandler;
 use Exception;
 use Throwable;
 
-class DefaultErrorHandler implements ErrorHandlerInterface
+class DefaultErrorHandler implements ErrorHandler, LoggerAwareInterface
 {
     private $log;
     private $responseFactory;
 
-    public function __construct(SlimApplication $slim, LoggerInterface $log)
+    public function setResponseFactory(ResponseFactoryInterface $factory)
     {
-        $app = $slim->getApp();
-        $request = $slim->getRequest();
+        $this->responseFactory = $factory;
+    }
 
+    public function setLogger(LoggerInterface $log)
+    {
         $this->log = $log;
-        $this->responseFactory = $app->getResponseFactory();
-
-        $shutdown = new ShutdownHandler($request, $this);
-
-        register_shutdown_function($shutdown);
-        set_error_handler([$this, 'phpErrorHandler']);
-        error_reporting(0);
     }
 
     public function phpErrorHandler($severity, $message, $file, $line)

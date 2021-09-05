@@ -11,6 +11,7 @@ use Sukhoykin\App\Composite;
 use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
 use Sukhoykin\App\Slim\Middleware\DefaultErrorHandler;
+use Sukhoykin\App\Slim\Middleware\ShutdownHandler;
 
 class SlimMiddleware implements Configurable, Component
 {
@@ -39,7 +40,15 @@ class SlimMiddleware implements Configurable, Component
 
         $app->addRoutingMiddleware();
 
-        $default = new DefaultErrorHandler($slim, $registry->get(LoggerInterface::class));
+        $default = $registry->get(DefaultErrorHandler::class);
+        $default->setResponseFactory($app->getResponseFactory());
+        $default->setLogger($registry->get(LoggerInterface::class));
+
+        $shutdown = new ShutdownHandler($slim->getRequest(), $default);
+
+        register_shutdown_function($shutdown);
+        set_error_handler([$this, 'phpErrorHandler']);
+        error_reporting(0);
 
         $middleware = $app->addErrorMiddleware(false, false, false);
         $middleware->setDefaultErrorHandler($default);
@@ -47,7 +56,13 @@ class SlimMiddleware implements Configurable, Component
         if ($this->config->has('error')) {
 
             foreach ($this->config->getArray('error') as $type => $class) {
-                $middleware->setErrorHandler($type, $registry->get($class));
+
+                $handler = $registry->get($class);
+
+                $handler->setResponseFactory($app->getResponseFactory());
+                $handler->setLogger($registry->get(LoggerInterface::class));
+
+                $middleware->setErrorHandler($type, $handler);
             }
         }
     }
