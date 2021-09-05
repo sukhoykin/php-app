@@ -12,9 +12,6 @@
       "php": "7.2.0"
     }
   },
-  "bin": [
-    "bin/console.php"
-  ],
   "autoload": {
     "psr-4": {
       "Sukhoykin\\App\\": "src"
