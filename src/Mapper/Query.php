@@ -6,7 +6,7 @@ namespace Sukhoykin\App\Mapper;
 
 use PDO;
 
-use App\Util\Profiler;
+use Sukhoykin\App\Util\Profiler;
 use Psr\Log\LoggerInterface;
 
 class Query
