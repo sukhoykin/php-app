@@ -59,7 +59,7 @@ class Mapper
 
     protected function getTableOfEntity(Entity $entity): string
     {
-        return $entity->getTable();
+        return '"' . $entity->getTable() . '"';
     }
 
     protected function getTableOfEntityClass(string $class): string
