@@ -117,7 +117,8 @@ class Relation implements JsonSerializable
 
     public function extract(?array $attributes = null, ?string $class = null): Relation
     {
-        $relation = $class ? new $class() : new (get_class($this));
+        $class = $class ? $class : get_class($this);
+        $relation = new $class();
 
         foreach ($attributes ?? $this->attributes() as $attribute) {
             $relation->{$attribute} = $this->{$attribute};
@@ -128,7 +129,8 @@ class Relation implements JsonSerializable
 
     public function reduce(array $attributes, ?string $class = null): Relation
     {
-        $relation = $class ? new $class() : new (get_class($this));
+        $class = $class ? $class : get_class($this);
+        $relation = new $class();
 
         foreach ($this->attributes() as $attribute) {
 
