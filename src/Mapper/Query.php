@@ -203,6 +203,6 @@ class Query
             );
         }
 
-        return new Result($this->statement, $this->datasource);
+        return new Result($this->statement, $this->datasource, $this->log);
     }
 }

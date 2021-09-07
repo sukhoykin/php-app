@@ -8,6 +8,7 @@ use PDO;
 use Psr\Log\LoggerInterface;
 
 use Exception;
+use Psr\Log\LoggerAwareInterface;
 
 class Mapper
 {
@@ -129,6 +130,10 @@ class Mapper
             ->execute();
 
         $entity->setDatasource($this->datasource, count($returning) ? $result : null);
+
+        if ($this->log && $entity instanceof LoggerAwareInterface) {
+            $entity->setLogger($this->log);
+        }
 
         return $result->rowCount();
     }

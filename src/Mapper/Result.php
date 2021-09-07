@@ -6,16 +6,20 @@ namespace Sukhoykin\App\Mapper;
 
 use PDO;
 use PDOStatement;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerInterface;
 
 class Result
 {
     private $statement;
     private $datasource;
+    private $log;
 
-    public function __construct(PDOStatement $statement, ?Datasource $datasource = null)
+    public function __construct(PDOStatement $statement, ?Datasource $datasource = null, ?LoggerInterface $log = null)
     {
         $this->statement = $statement;
         $this->datasource = $datasource;
+        $this->log = $log;
     }
 
     public function rowCount()
@@ -37,6 +41,9 @@ class Result
 
             if ($row instanceof Entity) {
                 $row->setDatasource($this->datasource);
+            }
+            if ($this->log && $row instanceof LoggerAwareInterface) {
+                $row->setLogger($this->log);
             }
         } else {
             $row = $this->statement->fetch();
@@ -60,6 +67,9 @@ class Result
             foreach ($rows as $row) {
                 if ($row instanceof Entity) {
                     $row->setDatasource($this->datasource);
+                }
+                if ($this->log && $row instanceof LoggerAwareInterface) {
+                    $row->setLogger($this->log);
                 }
             }
         } else {
