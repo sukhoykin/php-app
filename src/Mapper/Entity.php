@@ -68,6 +68,11 @@ class Entity extends Relation
         return $this->datasource;
     }
 
+    public function getMapper(): Mapper
+    {
+        return $this->getDatasource()->getMapper(Mapper::class);
+    }
+
     public function getTable(): string
     {
         return $this->table;
