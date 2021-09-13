@@ -69,11 +69,16 @@ class Relation implements JsonSerializable
      */
     public function attributes(?int $filter = 0, ?string $class = null): array
     {
-        if (!isset($this->properties)) {
-            $this->properties = $this->getClassPropertyNames($class ?? $this->getClass());
-        }
+        if ($class) {
+            $attributes = $this->getClassPropertyNames($class);
+        } else {
 
-        $attributes = $this->properties;
+            if (!isset($this->properties)) {
+                $this->properties = $this->getClassPropertyNames($this->getClass());
+            }
+
+            $attributes = $this->properties;
+        }
 
         if ($filter) {
 
