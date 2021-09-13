@@ -59,7 +59,7 @@ class Entity extends Relation
         }
     }
 
-    public function getDatasource(): Datasource
+    protected function getDatasource(): Datasource
     {
         if (!$this->datasource) {
             throw new Exception('Datasource is not set');
@@ -68,7 +68,7 @@ class Entity extends Relation
         return $this->datasource;
     }
 
-    public function getMapper(): Mapper
+    protected function getMapper(): Mapper
     {
         return $this->getDatasource()->getMapper(Mapper::class);
     }
