@@ -41,6 +41,11 @@ class Config implements Component
         }
     }
 
+    public function hasServiceConfig(string $class): bool
+    {
+        return $this->config->has($class);
+    }
+
     public function getServiceConfig(string $class): Section
     {
         return $this->config->getSection($class);

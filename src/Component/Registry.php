@@ -65,7 +65,10 @@ class Registry extends Container implements Component, Configurable
 
                 /** @var Config */
                 $config = $this->root->get(Config::class);
-                $service->configurate($config->getServiceConfig($class));
+
+                if ($config->hasServiceConfig($class)) {
+                    $service->configurate($config->getServiceConfig($class));
+                }
             }
 
             return $service;
