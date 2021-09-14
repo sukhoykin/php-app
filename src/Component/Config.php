@@ -7,6 +7,7 @@ namespace Sukhoykin\App\Component;
 use Sukhoykin\App\Component;
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Config\Main;
+use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
 
 class Config implements Component
@@ -38,5 +39,10 @@ class Config implements Component
                 $component->configurate($config);
             }
         }
+    }
+
+    public function getServiceConfig(string $class): Section
+    {
+        return $this->config->getSection($class);
     }
 }

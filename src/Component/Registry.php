@@ -18,6 +18,7 @@ use Exception;
 
 class Registry extends Container implements Component, Configurable
 {
+    private Composite $root;
     private $config;
 
     public function configurate(Section $config)
@@ -50,12 +51,24 @@ class Registry extends Container implements Component, Configurable
 
             $this->provide($classOfService, $provider);
         }
+
+        $this->root = $root;
     }
 
     public function get($class)
     {
         if ($this->has($class)) {
-            return parent::get($class);
+
+            $service = parent::get($class);
+
+            if ($service instanceof Configurable) {
+
+                /** @var Config */
+                $config = $this->root->get(Config::class);
+                $service->configurate($config->getServiceConfig($class));
+            }
+
+            return $service;
         }
 
         $reflection = new ReflectionClass($class);
@@ -70,13 +83,13 @@ class Registry extends Container implements Component, Configurable
             }
 
             $this->add($service);
-            return parent::get($class);
+            return $this->get($class);
         }
 
         if (count($parameters) == 1 && $parameters[0]->getType()->getName() == ContainerInterface::class) {
 
             $this->add(new $class($this));
-            return parent::get($class);
+            return $this->get($class);
         }
 
         throw new Exception("Unsupported constructor for class '$class'");
