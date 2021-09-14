@@ -17,8 +17,6 @@ use Psr\Log\LoggerInterface;
 
 class SchemaCommand implements Configurable, Executable, Service
 {
-    const CONFIG = 'schema';
-
     private $datasource, $log;
     private $path;
 

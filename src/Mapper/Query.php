@@ -14,7 +14,7 @@ class Query
     private $pdo;
     private $datasource;
 
-    private $enabled = true;
+    private $ifonly = true;
     private $query = [];
     private $params = [];
 
@@ -54,9 +54,9 @@ class Query
         }
     }
 
-    public function ifonly(bool $enabled)
+    public function ifonly(bool $ifonly)
     {
-        $this->enabled = $enabled;
+        $this->ifonly = $ifonly;
         return $this;
     }
 
@@ -69,7 +69,7 @@ class Query
      */
     public function append(string $sql, ?array $params = null): Query
     {
-        if (!$this->enabled) {
+        if (!$this->ifonly) {
             return $this;
         }
 
@@ -91,7 +91,7 @@ class Query
      */
     public function assign(array $map, string $separator): Query
     {
-        if (!$this->enabled) {
+        if (!$this->ifonly) {
             return $this;
         }
 
@@ -123,7 +123,7 @@ class Query
      */
     public function concat(array $list, string $separator): Query
     {
-        if (!$this->enabled) {
+        if (!$this->ifonly) {
             return $this;
         }
 
@@ -142,7 +142,7 @@ class Query
      */
     public function values(array $params, string $separator): Query
     {
-        if (!$this->enabled) {
+        if (!$this->ifonly) {
             return $this;
         }
 

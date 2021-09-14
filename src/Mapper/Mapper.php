@@ -74,7 +74,7 @@ class Mapper
             ->append($this->getTableOfEntityClass($class))
             ->ifonly($where != null)
             ->append('WHERE')
-            ->assign($where, ' AND ')
+            ->assign($where ?? [], ' AND ')
             ->execute();
 
         return $result->fetchAll($class);
