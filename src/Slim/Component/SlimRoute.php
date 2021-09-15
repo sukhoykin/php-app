@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Sukhoykin\App\Slim\Component;
 
 use Sukhoykin\App\Component;
+use Sukhoykin\App\Component\Registry;
 use Sukhoykin\App\Composite;
 use Sukhoykin\App\Config\Section;
 use Sukhoykin\App\Interfaces\Configurable;
@@ -24,6 +25,6 @@ class SlimRoute implements Configurable, Component
         $slim = $root->get(SlimApplication::class);
         $app = $slim->getApp();
 
-        $this->config->get('define')($app);
+        $this->config->get('define')($app, $root->get(Registry::class));
     }
 }
