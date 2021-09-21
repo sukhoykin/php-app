@@ -76,6 +76,8 @@ class DefaultErrorHandler implements ErrorHandler, LoggerAwareInterface
         $response = $this->responseFactory->createResponse($status);
         $response->getBody()->write($payload);
 
-        return $response->withHeader('Content-Type', 'application/json');
+        $size = $response->getBody()->getSize();
+
+        return $response->withHeader('Content-Type', 'application/json')->withHeader('Content-Length', (string) $size);
     }
 }
