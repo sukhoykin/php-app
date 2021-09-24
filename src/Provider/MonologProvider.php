@@ -13,7 +13,7 @@ use Sukhoykin\App\Config\Monolog;
 
 class MonologProvider extends ConfigurableProvider
 {
-    public function provide(string $class, ContainerInterface $registry): Logger
+    public function provide(string $class, ContainerInterface $registry): object
     {
         $monolog = $this->getConfig(Monolog::class);
 

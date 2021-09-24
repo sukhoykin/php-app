@@ -11,7 +11,7 @@ use Psr\Log\LoggerInterface;
 
 class DatasourceProvider extends ConfigurableProvider
 {
-    public function provide(string $class, ContainerInterface $registry): Datasource
+    public function provide(string $class, ContainerInterface $registry): object
     {
         $datasource = new Datasource();
 
