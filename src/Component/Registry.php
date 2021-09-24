@@ -18,7 +18,7 @@ use Exception;
 
 class Registry extends Container implements Component, Configurable
 {
-    private Composite $root;
+    private $root;
     private $config;
 
     public function configurate(Section $config)
