@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Sukhoykin\App\Client;
 
 use Exception;
-use App\Error\HttpError;
 
 class RestClient extends HttpClient
 {
