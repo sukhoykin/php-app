@@ -14,7 +14,7 @@ use Psr\Log\LoggerInterface;
 
 class Console extends Composite
 {
-    public function __construct(string $main, ?string $local = null)
+    public function __construct(string $main, ?string $local = null, string $logfile = null)
     {
         $arguments = new Arguments($_SERVER['argv']);
 
@@ -25,7 +25,7 @@ class Console extends Composite
                 Registry::class => [
                     LoggerInterface::class => [
                         MonologProvider::class => [
-                            'stream' => 'php://stdout',
+                            'stream' => $logfile ?? 'php://stdout',
                             'format' => "%level_name% %message%\n",
                             'level' => $arguments->has('-v') ? Logger::DEBUG : Logger::INFO
                         ]
